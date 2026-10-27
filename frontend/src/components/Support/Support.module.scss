@@ -1,0 +1,246 @@
+@use '@/styles/mixins' as *;
+
+.supportSection {
+  background-color: $color-surface;
+  padding: 100px 0;
+  border-top: 1px solid $color-border;
+  border-bottom: 1px solid $color-border;
+
+  @include mobile {
+    padding: 60px 0;
+  }
+}
+
+.supportGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 70px;
+
+  @include laptop {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+
+.supportCard {
+  @include card-base;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+  align-items: center;
+  height: 100%;
+
+  .cardIconCircle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+
+    &--gold {
+      background-color: $color-gold-light;
+      color: #946800;
+    }
+
+    &--green {
+      background-color: $color-green-light;
+      color: $color-green-dark;
+    }
+
+    &--navy {
+      background-color: $color-navy-subtle;
+      color: $color-navy;
+    }
+
+    &--blue {
+      background-color: $color-baby-blue;
+      color: $color-navy-dark;
+    }
+  }
+
+  .cardTitle {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: $color-navy;
+    margin-bottom: 8px;
+  }
+
+  .cardDesc {
+    font-size: 0.8875rem;
+    color: $color-text-muted;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    flex: 1;
+  }
+
+  .pixKeyBox {
+    background-color: $color-bg;
+    border: 1px dashed $color-border;
+    padding: 8px 12px;
+    border-radius: $radius-sm;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: $color-navy;
+    font-family: monospace;
+    width: 100%;
+    margin-bottom: 14px;
+    user-select: all;
+  }
+
+  .cardBtnGroup {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btnAction {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 18px;
+    border-radius: $radius-full;
+    font-size: 0.875rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &--primary {
+      background-color: $color-gold;
+      color: $color-navy-dark;
+
+      &:hover {
+        background-color: $color-gold-hover;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(244, 197, 66, 0.35);
+      }
+    }
+
+    &--secondary {
+      background-color: $color-navy;
+      color: $color-white;
+
+      &:hover {
+        background-color: $color-navy-light;
+        transform: translateY(-2px);
+      }
+    }
+
+    &--outline {
+      background-color: transparent;
+      border: 1px solid $color-border;
+      color: $color-navy;
+
+      &:hover {
+        background-color: $color-navy-subtle;
+        border-color: rgba($color-navy, 0.3);
+      }
+    }
+  }
+}
+
+/* Fluxo: Como o Apoio se Transforma */
+.transformationSection {
+  background: linear-gradient(180deg, #F8FAFC 0%, #EFF6FB 100%);
+  border-radius: $radius-xl;
+  padding: 44px 36px;
+  border: 1px solid $color-border;
+
+  @include mobile {
+    padding: 28px 18px;
+  }
+
+  .transTitle {
+    text-align: center;
+    font-size: 1.625rem;
+    color: $color-navy;
+    margin-bottom: 8px;
+
+    @include mobile {
+      font-size: 1.35rem;
+    }
+  }
+
+  .transSubtitle {
+    text-align: center;
+    font-size: 0.95rem;
+    color: $color-text-muted;
+    max-width: 600px;
+    margin: 0 auto 36px auto;
+  }
+}
+
+.transformationFlow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+
+  @include laptop {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .flowStep {
+    background-color: $color-surface;
+    border: 1px solid $color-border;
+    border-radius: $radius-md;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex: 1;
+    min-width: 140px;
+    box-shadow: $shadow-xs;
+
+    .stepIcon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: $color-baby-blue;
+      color: $color-navy;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    .stepText {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: $color-navy;
+      line-height: 1.35;
+    }
+  }
+
+  .flowArrow {
+    color: $color-gold;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+
+    @include laptop {
+      display: none;
+    }
+  }
+}

@@ -1,0 +1,96 @@
+@forward './variables';
+@use './variables' as *;
+
+// Mixins de Display e Flex
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-start {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// Container padrão responsivo
+@mixin container {
+  width: 100%;
+  max-width: $container-max-width;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 20px;
+  padding-right: 20px;
+
+  @media (min-width: $bp-tablet) {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+}
+
+// Responsividade
+@mixin mobile {
+  @media (max-width: #{$bp-mobile}) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: #{$bp-tablet}) {
+    @content;
+  }
+}
+
+@mixin laptop {
+  @media (max-width: #{$bp-laptop}) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: #{$bp-desktop}) {
+    @content;
+  }
+}
+
+// Estilo de Card com elevação sutil e hover suave
+@mixin card-base {
+  background-color: $color-surface;
+  border-radius: $radius-lg;
+  border: 1px solid $color-border;
+  box-shadow: $shadow-xs;
+  transition: transform $transition-normal, box-shadow $transition-normal, border-color $transition-normal;
+
+  &:hover {
+    box-shadow: $shadow-md;
+    border-color: rgba($color-navy, 0.2);
+    transform: translateY(-3px);
+  }
+}
+
+// Estilo de foco acessível (WCAG 2.1 AA)
+@mixin focus-ring {
+  outline: none;
+  &:focus-visible {
+    box-shadow: 0 0 0 3px rgba($color-gold, 0.6);
+  }
+}
+
+// Efeito Vidro Fosco (Glassmorphism sutil)
+@mixin glassmorphism($bg-color: rgba(255, 255, 255, 0.85)) {
+  background: $bg-color;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}

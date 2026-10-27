@@ -1,0 +1,232 @@
+@use '@/styles/mixins' as *;
+
+.projectsSection {
+  background-color: $color-surface;
+  padding: 100px 0;
+  border-top: 1px solid $color-border;
+  border-bottom: 1px solid $color-border;
+
+  @include mobile {
+    padding: 60px 0;
+  }
+}
+
+.categoryFilters {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 45px;
+
+  .filterBtn {
+    background-color: $color-bg;
+    color: $color-text-muted;
+    border: 1px solid $color-border;
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 8px 18px;
+    border-radius: $radius-full;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: $color-navy-subtle;
+      color: $color-navy;
+      border-color: rgba($color-navy, 0.2);
+    }
+
+    &--active {
+      background-color: $color-navy;
+      color: $color-white;
+      border-color: $color-navy;
+      box-shadow: 0 4px 12px rgba(23, 74, 110, 0.2);
+    }
+  }
+}
+
+.projectsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+
+  @include laptop {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+}
+
+.projectCard {
+  @include card-base;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  .imageWrapper {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+
+    .cardImage {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+
+    .categoryTag {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background-color: rgba(13, 43, 64, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: $color-gold;
+      border: 1px solid rgba(244, 197, 66, 0.3);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 5px 12px;
+      border-radius: $radius-full;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  &:hover .cardImage {
+    transform: scale(1.06);
+  }
+
+  .cardBody {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+
+    .projectTitle {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: $color-navy;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+
+    .projectDesc {
+      font-size: 0.925rem;
+      color: $color-text-muted;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      flex: 1;
+    }
+  }
+
+  .cardFooter {
+    padding: 16px 24px;
+    border-top: 1px solid $color-border-light;
+    background-color: $color-bg;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .beneficiariesBadge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: $color-green-dark;
+
+      .icon {
+        color: $color-green;
+      }
+    }
+
+    .actionLink {
+      background: none;
+      border: none;
+      color: $color-navy;
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.2s;
+
+      &:hover {
+        color: $color-navy-light;
+      }
+    }
+  }
+}
+
+/* Modal Content */
+.modalProjectDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  .modalImage {
+    width: 100%;
+    height: 260px;
+    object-fit: cover;
+    border-radius: $radius-md;
+    border: 1px solid $color-border;
+  }
+
+  .locationRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    color: $color-text-muted;
+    font-weight: 500;
+  }
+
+  .fullStory {
+    font-size: 1rem;
+    color: $color-text;
+    line-height: 1.7;
+  }
+
+  .goalsBox {
+    background-color: $color-bg;
+    border-radius: $radius-md;
+    padding: 20px;
+    border: 1px solid $color-border;
+
+    h4 {
+      font-size: 1rem;
+      color: $color-navy;
+      margin-bottom: 12px;
+    }
+
+    ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+
+      li {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 0.925rem;
+        color: $color-text-muted;
+
+        .checkIcon {
+          color: $color-green;
+          flex-shrink: 0;
+          margin-top: 3px;
+        }
+      }
+    }
+  }
+}

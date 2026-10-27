@@ -1,0 +1,55 @@
+@use '@/styles/mixins' as *;
+
+.partnersSection {
+  background-color: $color-bg;
+  padding: 80px 0;
+  border-bottom: 1px solid $color-border;
+}
+
+.partnersGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+
+  @include laptop {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+  }
+}
+
+.partnerCard {
+  @include card-base;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  background-color: $color-surface;
+
+  .partnerType {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $color-navy;
+    background-color: $color-baby-blue;
+    padding: 3px 10px;
+    border-radius: $radius-full;
+    width: fit-content;
+    margin-bottom: 12px;
+  }
+
+  .partnerName {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: $color-navy;
+    margin-bottom: 8px;
+  }
+
+  .partnerDesc {
+    font-size: 0.875rem;
+    color: $color-text-muted;
+    line-height: 1.5;
+  }
+}

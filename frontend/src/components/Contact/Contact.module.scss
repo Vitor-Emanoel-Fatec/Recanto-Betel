@@ -1,0 +1,249 @@
+@use '@/styles/mixins' as *;
+
+.contactSection {
+  background-color: $color-surface;
+  padding: 100px 0;
+  border-top: 1px solid $color-border;
+
+  @include mobile {
+    padding: 60px 0;
+  }
+}
+
+.contactLayout {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 50px;
+  align-items: flex-start;
+
+  @include laptop {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+}
+
+/* Coluna Esquerda: Informações Institucionais */
+.infoColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+
+  .infoTitle {
+    font-size: 1.5rem;
+    color: $color-navy;
+    margin-bottom: 6px;
+  }
+
+  .infoLead {
+    font-size: 0.95rem;
+    color: $color-text-muted;
+    line-height: 1.6;
+  }
+
+  .detailsList {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .detailItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+
+    .iconCircle {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background-color: $color-navy-subtle;
+      color: $color-navy;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .detailText {
+      display: flex;
+      flex-direction: column;
+
+      strong {
+        font-size: 0.8125rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: $color-navy;
+        margin-bottom: 2px;
+      }
+
+      span {
+        font-size: 0.9375rem;
+        color: $color-text;
+        line-height: 1.45;
+      }
+    }
+  }
+
+  /* Redes Sociais com ícones redondos */
+  .socialRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 4px;
+
+    .socialLink {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background-color: $color-navy;
+      color: $color-white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease;
+
+      &:hover {
+        background-color: $color-gold;
+        color: $color-navy-dark;
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(244, 197, 66, 0.4);
+      }
+    }
+  }
+
+  /* Card Azul Claro de Localização */
+  .locationCard {
+    background-color: $color-baby-blue;
+    border: 1px solid $color-baby-blue-border;
+    border-radius: $radius-lg;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    .locHeader {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: $color-navy;
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .locAddress {
+      font-size: 0.9rem;
+      color: #204E6F;
+      line-height: 1.5;
+    }
+
+    .mapsBtn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background-color: $color-navy;
+      color: $color-white;
+      font-size: 0.875rem;
+      font-weight: 700;
+      padding: 10px 18px;
+      border-radius: $radius-full;
+      text-decoration: none;
+      width: fit-content;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: $color-navy-dark;
+        transform: translateY(-2px);
+      }
+    }
+  }
+}
+
+/* Coluna Direita: Formulário */
+.formCard {
+  @include card-base;
+  padding: 40px;
+  background-color: $color-bg;
+
+  @include mobile {
+    padding: 24px 18px;
+  }
+
+  .formTitle {
+    font-size: 1.4rem;
+    color: $color-navy;
+    margin-bottom: 8px;
+  }
+
+  .formSubtitle {
+    font-size: 0.925rem;
+    color: $color-text-muted;
+    margin-bottom: 24px;
+  }
+
+  .contactForm {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: $color-navy;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: $radius-sm;
+      border: 1px solid $color-border;
+      background-color: $color-surface;
+      color: $color-text;
+      font-size: 0.95rem;
+      transition: border-color 0.2s;
+      @include focus-ring;
+
+      &::placeholder {
+        color: #94A3B8;
+      }
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+    }
+  }
+
+  .submitBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background-color: $color-navy;
+    color: $color-white;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 15px 28px;
+    border-radius: $radius-md;
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    margin-top: 8px;
+
+    &:hover {
+      background-color: $color-navy-light;
+      transform: translateY(-2px);
+      box-shadow: $shadow-md;
+    }
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+  }
+}

@@ -1,0 +1,172 @@
+@use './variables' as *;
+@use './mixins' as *;
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px;
+}
+
+body {
+  font-family: $font-sans;
+  background-color: $color-bg;
+  color: $color-text;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: $font-display;
+  color: $color-navy;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color $transition-fast;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  @include focus-ring;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+/* Accessibility Skip Link */
+.skip-link {
+  position: absolute;
+  top: -60px;
+  left: 20px;
+  background: $color-navy;
+  color: $color-white;
+  padding: 10px 18px;
+  z-index: 9999;
+  font-weight: 600;
+  border-radius: $radius-sm;
+  transition: top 0.2s;
+
+  &:focus {
+    top: 20px;
+  }
+}
+
+/* Section Common Container and Headers */
+.section-wrapper {
+  padding: 80px 0;
+  position: relative;
+
+  @include mobile {
+    padding: 56px 0;
+  }
+}
+
+.section-container {
+  @include container;
+}
+
+.section-header {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 50px auto;
+
+  @include mobile {
+    margin-bottom: 36px;
+  }
+
+  .section-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: $color-green-dark;
+    background-color: $color-green-light;
+    padding: 6px 14px;
+    border-radius: $radius-full;
+    margin-bottom: 14px;
+    border: 1px solid rgba($color-green, 0.3);
+  }
+
+  .section-tag-gold {
+    color: #946800;
+    background-color: $color-gold-light;
+    border-color: $color-gold-border;
+  }
+
+  .section-tag-navy {
+    color: $color-navy;
+    background-color: $color-baby-blue;
+    border-color: $color-baby-blue-border;
+  }
+
+  .section-title {
+    font-size: 2.25rem;
+    color: $color-navy;
+    margin-bottom: 14px;
+    letter-spacing: -0.02em;
+
+    @include tablet {
+      font-size: 1.875rem;
+    }
+
+    @include mobile {
+      font-size: 1.625rem;
+    }
+  }
+
+  .section-subtitle {
+    font-size: 1.0625rem;
+    color: $color-text-muted;
+    line-height: 1.6;
+
+    @include mobile {
+      font-size: 0.9375rem;
+    }
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 5px;
+
+  &:hover {
+    background: #94a3b8;
+  }
+}

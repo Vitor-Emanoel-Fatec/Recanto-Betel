@@ -1,0 +1,75 @@
+// ========================================================
+// DESIGN SYSTEM - ASSOCIAÇÃO RECANTO BETEL (50 ANOS)
+// ========================================================
+
+// Cores Principais
+$color-navy: #174A6E;             // Azul Profundo / Primário Institucional
+$color-navy-dark: #0D2B40;        // Azul Marinho Escuro (Footer / Overlay Hero)
+$color-navy-light: #256B9D;       // Azul Intermediário
+$color-navy-subtle: #EDF5FA;      // Fundo azul clarinho bem sutil
+
+$color-gold: #F4C542;             // Amarelo Ouro (CTAs e destaques principais)
+$color-gold-hover: #E0B333;       // Amarelo Ouro Hover
+$color-gold-light: #FEF9EC;       // Fundo amarelo claro
+$color-gold-border: #FBE59E;      // Borda amarela sutil
+
+$color-baby-blue: #DCEFFD;        // Azul-bebê (Acolhimento, serenidade, cuidado)
+$color-baby-blue-border: #BCE0FB; // Borda azul claro
+$color-baby-blue-dark: #2B75A8;   // Texto sobre azul bebê
+
+$color-green: #79B98A;            // Verde (Crescimento, vida, tags e renovação)
+$color-green-light: #EEF8F1;      // Fundo verde claro
+$color-green-dark: #2F7A43;       // Verde escuro para texto acessível
+
+$color-white: #FFFFFF;
+$color-bg: #FAFBFC;               // Fundo geral suave off-white
+$color-surface: #FFFFFF;          // Fundo de cards
+$color-surface-hover: #F8FAFC;    // Fundo de card hover
+
+// Texto & Contraste WCAG
+$color-text: #132E43;             // Texto principal de alto contraste
+$color-text-muted: #53697D;       // Texto secundário legível
+$color-text-light: #8E9FAA;       // Texto de apoio
+$color-text-white: #FFFFFF;
+$color-text-white-muted: #C5D6E3;
+
+// Bordas & Divisores
+$color-border: #E5ECF2;
+$color-border-dark: #234764;
+$color-border-light: #F0F4F8;
+
+// Sombras
+$shadow-xs: 0 1px 2px rgba(19, 46, 67, 0.05);
+$shadow-sm: 0 2px 8px rgba(19, 46, 67, 0.07);
+$shadow-md: 0 6px 18px rgba(19, 46, 67, 0.09);
+$shadow-lg: 0 12px 30px rgba(19, 46, 67, 0.12);
+$shadow-xl: 0 20px 45px rgba(19, 46, 67, 0.15);
+$shadow-gold: 0 8px 24px rgba(244, 197, 66, 0.35);
+
+// Tipografia
+$font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+$font-display: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+
+// Arredondamentos
+$radius-xs: 4px;
+$radius-sm: 8px;
+$radius-md: 14px;
+$radius-lg: 20px;
+$radius-xl: 28px;
+$radius-full: 9999px;
+
+// Transições
+$transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+$transition-normal: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+$transition-slow: 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+
+// Breakpoints
+$bp-mobile-sm: 390px;
+$bp-mobile: 640px;
+$bp-tablet: 768px;
+$bp-laptop: 1024px;
+$bp-desktop: 1280px;
+$bp-wide: 1440px;
+
+// Container
+$container-max-width: 1240px;

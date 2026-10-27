@@ -1,0 +1,96 @@
+@use '@/styles/mixins' as *;
+
+.toastContainer {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+
+  @include mobile {
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+  }
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: $color-navy-dark;
+  color: $color-white;
+  padding: 14px 20px;
+  border-radius: $radius-md;
+  box-shadow: $shadow-xl;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  min-width: 280px;
+  max-width: 420px;
+  animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: all 0.25s ease;
+
+  &--success {
+    border-left: 4px solid $color-green;
+    .iconWrapper {
+      color: $color-green;
+      background-color: rgba($color-green, 0.15);
+    }
+  }
+
+  &--info {
+    border-left: 4px solid $color-gold;
+    .iconWrapper {
+      color: $color-gold;
+      background-color: rgba($color-gold, 0.15);
+    }
+  }
+
+  .iconWrapper {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .message {
+    flex: 1;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+
+  .closeButton {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+
+    &:hover {
+      color: $color-white;
+    }
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

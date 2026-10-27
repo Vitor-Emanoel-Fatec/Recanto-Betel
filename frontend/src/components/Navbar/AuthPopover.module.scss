@@ -1,0 +1,259 @@
+@use '@/styles/variables' as *;
+
+.auth {
+  position: relative;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0 10px;
+  color: $color-navy;
+  border: 1px solid $color-border;
+  border-radius: $radius-full;
+  background: $color-white;
+  transition: background $transition-fast, border-color $transition-fast;
+  white-space: nowrap;
+
+  &:hover,
+  &--active {
+    background: $color-navy-subtle;
+    border-color: $color-baby-blue-border;
+  }
+}
+
+.userName {
+  max-width: 100px;
+  overflow: hidden;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Popover Desktop com adaptação tipo Drawer para Mobile */
+.popover {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  z-index: 1002;
+  width: 360px;
+  padding: 24px;
+  color: $color-text;
+  background: $color-white;
+  border: 1px solid $color-border;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-xl;
+  animation: appear 0.16s ease-out;
+
+  &::before {
+    position: absolute;
+    top: -7px;
+    right: 16px;
+    width: 12px;
+    height: 12px;
+    content: '';
+    background: $color-white;
+    border-top: 1px solid $color-border;
+    border-left: 1px solid $color-border;
+    transform: rotate(45deg);
+  }
+
+  @media (max-width: 768px) {
+    position: fixed;
+    top: 70px;
+    right: 0;
+    left: 0;
+    width: 100%;
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
+    border-radius: 0 0 $radius-lg $radius-lg;
+    border-left: none;
+    border-right: none;
+    border-bottom: 2px solid $color-gold;
+    box-shadow: $shadow-xl;
+
+    &::before {
+      display: none;
+    }
+  }
+}
+
+.popoverHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+
+  h2 {
+    margin-top: 3px;
+    font-size: 1.25rem;
+    white-space: nowrap;
+  }
+}
+
+.eyebrow {
+  color: $color-navy-light;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.closeButton {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  color: $color-text-muted;
+  border-radius: $radius-full;
+  place-items: center;
+
+  &:hover {
+    color: $color-navy;
+    background: $color-navy-subtle;
+  }
+}
+
+.description {
+  margin: 12px 0 18px;
+  color: $color-text-muted;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.form {
+  display: grid;
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  color: $color-text;
+  font-size: 0.8125rem;
+  font-weight: 600;
+
+  input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    color: $color-text;
+    background: $color-bg;
+    border: 1px solid $color-border;
+    border-radius: $radius-sm;
+    outline: none;
+    transition: border-color $transition-fast, box-shadow $transition-fast;
+
+    &::placeholder {
+      color: $color-text-light;
+      font-weight: 400;
+    }
+
+    &:focus {
+      border-color: $color-navy-light;
+      box-shadow: 0 0 0 3px rgba($color-navy-light, 0.12);
+    }
+  }
+}
+
+.message {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.message--error {
+  color: #a52b2b;
+}
+
+.message--success {
+  color: $color-green-dark;
+}
+
+.submitButton,
+.secondaryButton {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 16px;
+  color: $color-white;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  background: $color-navy;
+  border-radius: $radius-sm;
+  transition: background $transition-fast, opacity $transition-fast;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) {
+    background: $color-navy-dark;
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.7;
+  }
+}
+
+.switchMode {
+  margin-top: 18px;
+  color: $color-text-muted;
+  font-size: 0.8125rem;
+  text-align: center;
+
+  button {
+    color: $color-navy;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+}
+
+.account {
+  padding-top: 14px;
+}
+
+.greeting {
+  color: $color-navy;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.accountEmail {
+  margin: 2px 0 18px;
+  color: $color-text-muted;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.secondaryButton {
+  color: $color-navy;
+  background: $color-navy-subtle;
+
+  &:hover:not(:disabled) {
+    background: $color-baby-blue;
+  }
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popover {
+    animation: none;
+  }
+}

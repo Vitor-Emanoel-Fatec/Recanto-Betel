@@ -1,0 +1,174 @@
+@use '@/styles/mixins' as *;
+
+.servicesSection {
+  background-color: $color-bg;
+  padding: 100px 0;
+  position: relative;
+
+  @include mobile {
+    padding: 60px 0;
+  }
+}
+
+.servicesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+
+  @include laptop {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+.serviceCard {
+  @include card-base;
+  padding: 34px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  position: relative;
+
+  @include mobile {
+    padding: 26px 20px;
+  }
+
+  .cardTop {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .iconBadge {
+    width: 58px;
+    height: 58px;
+    border-radius: $radius-md;
+    background: linear-gradient(135deg, $color-navy-subtle 0%, rgba(220, 239, 253, 0.7) 100%);
+    border: 1px solid $color-baby-blue-border;
+    color: $color-navy;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 22px;
+    transition: all 0.3s ease;
+  }
+
+  &:hover .iconBadge {
+    background: $color-navy;
+    color: $color-gold;
+    transform: scale(1.08) rotate(-4deg);
+    box-shadow: 0 6px 18px rgba(23, 74, 110, 0.25);
+  }
+
+  .title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: $color-navy;
+    margin-bottom: 12px;
+    line-height: 1.35;
+  }
+
+  .desc {
+    font-size: 0.9375rem;
+    color: $color-text-muted;
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  .cardBottom {
+    border-top: 1px solid $color-border-light;
+    padding-top: 18px;
+  }
+
+  .learnMoreBtn {
+    background: none;
+    border: none;
+    color: $color-navy;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    transition: all 0.2s ease;
+
+    .arrowIcon {
+      transition: transform 0.2s ease;
+    }
+
+    &:hover {
+      color: $color-navy-light;
+
+      .arrowIcon {
+        transform: translateX(4px);
+      }
+    }
+  }
+}
+
+/* Modal Content Details */
+.modalServiceDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  .modalLead {
+    font-size: 1.05rem;
+    color: $color-text;
+    line-height: 1.65;
+  }
+
+  .metaBox {
+    background-color: $color-bg;
+    border-radius: $radius-md;
+    padding: 18px 20px;
+    border: 1px solid $color-border;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .metaRow {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      strong {
+        font-size: 0.8125rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: $color-navy;
+      }
+
+      span {
+        font-size: 0.95rem;
+        color: $color-text-muted;
+      }
+    }
+  }
+
+  .highlightsList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    list-style: none;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9375rem;
+      color: $color-text;
+
+      .bulletCheck {
+        color: $color-green;
+        flex-shrink: 0;
+      }
+    }
+  }
+}

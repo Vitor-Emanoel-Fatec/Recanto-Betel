@@ -1,0 +1,180 @@
+@use '@/styles/mixins' as *;
+
+.footer {
+  background-color: $color-navy-dark;
+  color: $color-white;
+  padding-top: 80px;
+  padding-bottom: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+
+  @include mobile {
+    padding-top: 50px;
+  }
+}
+
+.mainGrid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 60px;
+  margin-bottom: 60px;
+
+  @include laptop {
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+}
+
+/* Coluna 1: Logo com ícone de coração azul dentro de círculo amarelo */
+.brandCol {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  .footerLogo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+
+    .yellowCircleIcon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background-color: $color-gold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      .blueHeart {
+        color: $color-navy;
+        fill: $color-navy;
+      }
+    }
+
+    .logoTextGroup {
+      display: flex;
+      flex-direction: column;
+
+      .associationPrefix {
+        font-size: 0.6875rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #94A3B8;
+        line-height: 1;
+      }
+
+      .brandName {
+        font-family: $font-display;
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: $color-white;
+        line-height: 1.2;
+      }
+    }
+  }
+
+  .brandDesc {
+    font-size: 0.925rem;
+    color: #CBD5E1;
+    line-height: 1.6;
+    max-width: 380px;
+  }
+
+  /* Badge escuro com borda fina contendo 50 em amarelo e Anos · 1976-2026 em cinza */
+  .jubileeBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 6px 14px;
+    border-radius: $radius-full;
+    width: fit-content;
+    margin-top: 4px;
+
+    .badgeNumber {
+      font-family: $font-display;
+      font-size: 1rem;
+      font-weight: 800;
+      color: $color-gold;
+    }
+
+    .badgeText {
+      font-size: 0.8125rem;
+      color: #94A3B8;
+      letter-spacing: 0.04em;
+    }
+  }
+}
+
+/* Colunas de Navegação e Contribua */
+.navCol {
+  display: flex;
+  flex-direction: column;
+
+  .colTitle {
+    font-size: 0.8125rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: $color-white;
+    margin-bottom: 20px;
+  }
+
+  .linkList {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    li a, li button {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 0.9375rem;
+      color: #CBD5E1;
+      text-decoration: none;
+      text-align: left;
+      cursor: pointer;
+      transition: color 0.2s;
+
+      &:hover {
+        color: $color-gold;
+      }
+    }
+  }
+}
+
+/* Base do Rodapé */
+.footerBottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  @include mobile {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .copyright {
+    font-size: 0.8125rem;
+    color: #94A3B8;
+  }
+
+  .cnpjTag {
+    font-size: 0.8125rem;
+    color: #94A3B8;
+  }
+}
