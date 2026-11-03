@@ -66,7 +66,7 @@ model ParentBenificiary {
   id                String      @id @default(uuid())
   beneficiary_id    String      @unique
   parent_id         String      @unique
-  relationshipType  String
+  relationshipType  Int
 
   beneficiary       Beneficiary @relation(fields: [beneficiary_id], references: [id])
   parent            Parent      @relation(fields: [parent_id], references: [id])

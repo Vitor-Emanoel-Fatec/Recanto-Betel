@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { BeneficiaryService } from './beneficiary.service.js';
 import { BeneficiaryController } from './beneficiary.controller.js';
 import { DatabaseModule } from '../database/database.module.js';
+import { ParentModule } from '../parent/parent.module.js';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, ParentModule],
   controllers: [BeneficiaryController],
   providers: [BeneficiaryService],
 })

@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Beneficiary } from "@prisma/client";
 import { PrismaService } from '../database/prisma.service.js';
+import { ParentService } from '../parent/parent.service.js';
 
 import { ICreateBeneficiary } from './dto/beneficiary-create.dto.js';
 import { IFindBeneficiary } from './dto/beneficiary-find.dto.js';
@@ -8,7 +9,7 @@ import { IUpdateBeneficiary } from './dto/beneficiary-update.dto.js';
 
 @Injectable()
 export class BeneficiaryService {
-    constructor(private readonly PrismaService: PrismaService){};
+    constructor(private readonly PrismaService: PrismaService, private readonly ParentService: ParentService){};
 
     async create(data: ICreateBeneficiary): Promise<Beneficiary | undefined> {
         try {
@@ -26,6 +27,25 @@ export class BeneficiaryService {
                     } : undefined
                 }
             });
+
+            const parent = await this.ParentService.create({
+                name: data.parent_name,
+                cpf: data.parent_cpf,
+                contact: data.contact,
+                email: data.email,
+                profession: data.profession,
+                educational_level: data.educational_level,
+                comertial_address: data.comertial_address,
+                salary: data.salary
+            })
+
+            const relation = await this.PrismaService.parentBenificiary.create({
+                data: {
+                    beneficiary_id: beneficiary.id,
+                    parent_id: parent!.id,
+                    relationshipType: data.relation_type
+                }
+            })
 
             return beneficiary;
         } catch(E: any){
