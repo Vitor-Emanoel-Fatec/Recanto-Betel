@@ -28,24 +28,16 @@ export class BeneficiaryService {
                 }
             });
 
-            const parent = await this.ParentService.create({
-                name: data.parent_name,
-                cpf: data.parent_cpf,
-                contact: data.contact,
-                email: data.email,
-                profession: data.profession,
-                educational_level: data.educational_level,
-                comertial_address: data.comertial_address,
-                salary: data.salary
-            })
-
-            const relation = await this.PrismaService.parentBenificiary.create({
-                data: {
-                    beneficiary_id: beneficiary.id,
-                    parent_id: parent!.id,
-                    relationshipType: data.relation_type
-                }
-            })
+            const parents_promise = data.parents.map(async (parent_data) => {
+                const parent = await this.ParentService.create(parent_data);
+                const relationship = await this.PrismaService.parentBenificiary.create({
+                    data: {
+                        beneficiary_id: beneficiary.id,
+                        parent_id: parent!.id,
+                        relationshipType: parent_data.relation_type
+                    }
+                })
+            });
 
             return beneficiary;
         } catch(E: any){

@@ -29,6 +29,7 @@ export class ParentService {
 
             return parent;
         } catch(E: any){
+            console.log(E.message);
             throw new InternalServerErrorException("Erro ao cadastrar responsável");
         }
     }

@@ -1,3 +1,5 @@
+import { ICreateParent } from "../../parent/dto/parent-create.dto.js"
+
 export interface ICreateBeneficiary {
     health_info_id?: string,
     user_id?: string,
@@ -9,13 +11,5 @@ export interface ICreateBeneficiary {
     school: string,
     period: string,
 
-    parent_name: string,
-    parent_cpf: number,
-    relation_type: number,
-    contact: string,
-    email: string,
-    profession?: string,
-    educational_level: string,
-    comertial_address: string,
-    salary: number
+    parents: ICreateParent[]
 }

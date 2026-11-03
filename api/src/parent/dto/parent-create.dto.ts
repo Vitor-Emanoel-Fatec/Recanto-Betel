@@ -7,5 +7,6 @@ export interface ICreateParent {
     profession?: string,
     educational_level: string,
     comertial_address: string,
-    salary: number
+    salary: number,
+    relation_type: number
 }
