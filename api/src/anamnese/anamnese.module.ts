@@ -7,6 +7,7 @@ import { DatabaseModule } from '../database/database.module.js';
 @Module({
   imports: [DatabaseModule],
   controllers: [AnamneseController],
-  providers: [AnamneseService]
+  providers: [AnamneseService],
+  exports: [AnamneseService]
 })
 export class AnamneseModule {}

@@ -6,10 +6,15 @@ import { ParentService } from '../parent/parent.service.js';
 import { ICreateBeneficiary } from './dto/beneficiary-create.dto.js';
 import { IFindBeneficiary } from './dto/beneficiary-find.dto.js';
 import { IUpdateBeneficiary } from './dto/beneficiary-update.dto.js';
+import { AnamneseService } from '../anamnese/anamnese.service.js';
 
 @Injectable()
 export class BeneficiaryService {
-    constructor(private readonly PrismaService: PrismaService, private readonly ParentService: ParentService){};
+    constructor(
+        private readonly PrismaService: PrismaService, 
+        private readonly ParentService: ParentService,
+        private readonly AnamneseService: AnamneseService
+    ){};
 
     async create(data: ICreateBeneficiary): Promise<Beneficiary | undefined> {
         try {
@@ -26,6 +31,11 @@ export class BeneficiaryService {
                         connect: {id: data.health_info_id}
                     } : undefined
                 }
+            });
+
+            const anamnese_form = await this.AnamneseService.create({
+                ...data.anamnese,
+                beneficiary_id: beneficiary.id
             });
 
             const parents_promise = data.parents.map(async (parent_data) => {
