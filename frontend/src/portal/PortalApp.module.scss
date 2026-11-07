@@ -251,3 +251,19 @@ td small { display: block; margin-top: 3px; color: $color-text-light; font-size:
 @media (prefers-reduced-motion: reduce) {
   .app *, .app *::before, .app *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
 }
+
+.questionRow { min-width: 0; margin: 0; padding: 0; border: 0; display: grid; gap: 8px; }
+.questionRow legend { padding: 0; margin-bottom: 8px; color: $color-navy; font-size: .77rem; font-weight: 700; }
+.radioGroup { display: flex; flex-wrap: wrap; gap: 10px; }
+.radioOption { display: inline-flex; align-items: center; gap: 8px; min-height: 43px; padding: 0 16px; color: $color-text; border: 1px solid $color-border; border-radius: 7px; background: $color-white; font-size: .83rem; font-weight: 500; cursor: pointer; &:has(input:checked) { color: $color-navy; border-color: $color-navy-light; background: $color-navy-subtle; } &:focus-within { box-shadow: 0 0 0 3px rgba($color-navy-light, .13); } }
+.radioOption input { width: 16px; min-height: 0; margin: 0; accent-color: $color-navy; }
+.consent { display: flex; align-items: flex-start; gap: 11px; padding: 14px; color: $color-text; border: 1px solid $color-border; border-radius: 7px; background: $color-surface-hover; font-size: .82rem; line-height: 1.55; cursor: pointer; }
+.consent input { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 2px; accent-color: $color-navy; }
+.repeatRow, .repeatRow3 { display: grid; gap: 12px; min-width: 0; margin: 14px 0 0; padding: 14px 0 0; border: 0; border-top: 1px solid $color-border-light; }
+.repeatRow { grid-template-columns: 2fr 1fr 1fr 1fr; }
+.repeatRow3 { grid-template-columns: 2fr 1fr 1fr; }
+.repeatRow legend, .repeatRow3 legend { padding: 0 8px 0 0; color: $color-text-muted; font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.repeatRow .field, .repeatRow3 .field { min-width: 0; }
+@media (max-width: 720px) {
+  .repeatRow, .repeatRow3 { grid-template-columns: 1fr; }
+}

@@ -18,6 +18,16 @@ export interface Beneficiary {
   parentId: string;
 }
 
+export type FichaKind = 'matricula' | 'termo' | 'autorizacao' | 'anamnese' | 'relatos';
+
+export interface FichaSubmission {
+  id: string;
+  kind: FichaKind;
+  beneficiaryId: string;
+  submittedAt: string;
+  data: Record<string, string>;
+}
+
 export interface EnrollmentEvent {
   id: string;
   date: string;
