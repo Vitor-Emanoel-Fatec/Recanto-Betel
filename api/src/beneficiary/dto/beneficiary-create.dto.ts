@@ -1,5 +1,6 @@
 import { ICreateParent } from "../../parent/dto/parent-create.dto.js"
 import { ICreateAnamnese } from "../../anamnese/dto/anamnese-create.dto.js"
+import { ICreateRelativies } from "../../relativies/dto/relativies-create.dto.js"
 
 export interface ICreateBeneficiary {
     health_info_id?: string,
@@ -12,6 +13,7 @@ export interface ICreateBeneficiary {
     school: string,
     period: string,
 
-    parents: ICreateParent[]
+    parents: ICreateParent[],
+    relativies?: ICreateRelativies[],
     anamnese: ICreateAnamnese
 }

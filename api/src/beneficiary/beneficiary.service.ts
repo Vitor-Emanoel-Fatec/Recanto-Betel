@@ -7,13 +7,15 @@ import { ICreateBeneficiary } from './dto/beneficiary-create.dto.js';
 import { IFindBeneficiary } from './dto/beneficiary-find.dto.js';
 import { IUpdateBeneficiary } from './dto/beneficiary-update.dto.js';
 import { AnamneseService } from '../anamnese/anamnese.service.js';
+import { RelativiesService } from '../relativies/relativies.service.js';
 
 @Injectable()
 export class BeneficiaryService {
     constructor(
         private readonly PrismaService: PrismaService, 
         private readonly ParentService: ParentService,
-        private readonly AnamneseService: AnamneseService
+        private readonly AnamneseService: AnamneseService,
+        private readonly RelativiesService: RelativiesService
     ){};
 
     async create(data: ICreateBeneficiary): Promise<Beneficiary | undefined> {
@@ -47,6 +49,11 @@ export class BeneficiaryService {
                         relationshipType: parent_data.relation_type
                     }
                 })
+            });
+
+            const relativies_promise = data.relativies!.map(async (relativies_data) => {
+                const data = {...relativies_data, beneficiary_id: beneficiary.id};
+                const relativies = await this.RelativiesService.create(data);
             });
 
             return beneficiary;
