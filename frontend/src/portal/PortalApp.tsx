@@ -1,22 +1,24 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import {
   Activity, ArrowLeft, ArrowRight, Bell, Check, ChevronDown, ClipboardList, Clock3,
-  FilePlus2, Filter, Heart, LayoutDashboard, Menu, Plus, Search, Users, X,
+  FilePlus2, FileText, Filter, Heart, LayoutDashboard, Menu, Plus, Search, Users, X,
 } from 'lucide-react';
 import styles from './PortalApp.module.scss';
 import {
   demoBeneficiaries, demoEnrollments, demoParent, enrollmentStatuses,
-  type Beneficiary, type Enrollment, type EnrollmentStatus,
+  type Beneficiary, type Enrollment, type EnrollmentStatus, type FichaKind, type FichaSubmission,
 } from './demoData';
+import { FichaPage, FichasHub, isFichaKind } from './PortalForms';
 import { applyDemoEnrollmentAction, createDemoBeneficiary, createDemoEnrollment, type EnrollmentAction } from './demoService';
 
 type Area = 'portal' | 'admin';
-type PageKey = 'home' | 'beneficiaries' | 'beneficiary-detail' | 'beneficiary-new' | 'enrollments' | 'enrollment-new' | 'enrollment-detail' | 'tracking' | 'responsibles' | 'reports';
+type PageKey = 'home' | 'beneficiaries' | 'beneficiary-detail' | 'beneficiary-new' | 'enrollments' | 'enrollment-new' | 'enrollment-detail' | 'tracking' | 'responsibles' | 'reports' | 'forms' | 'form';
 type Action = EnrollmentAction;
 const PAGE_LABELS: Record<PageKey, string> = {
   home: 'Visão geral', beneficiaries: 'Beneficiários', 'beneficiary-detail': 'Detalhes do beneficiário', 'beneficiary-new': 'Novo beneficiário',
   enrollments: 'Matrículas', 'enrollment-new': 'Nova solicitação',
   'enrollment-detail': 'Acompanhamento', tracking: 'Acompanhamento institucional', responsibles: 'Responsáveis', reports: 'Relatórios',
+  forms: 'Fichas', form: 'Preencher ficha',
 };
 function routeInfo(path: string): { area: Area; page: PageKey; id?: string } {
   const area: Area = path.startsWith('/admin') ? 'admin' : 'portal';
@@ -31,6 +33,8 @@ function routeInfo(path: string): { area: Area; page: PageKey; id?: string } {
   if (segments[1] === 'acompanhamento') return { area, page: 'tracking' };
   if (segments[1] === 'responsaveis') return { area, page: 'responsibles' };
   if (segments[1] === 'relatorios') return { area, page: 'reports' };
+  if (segments[1] === 'fichas' && segments[2]) return { area, page: 'form', id: segments[2] };
+  if (segments[1] === 'fichas') return { area, page: 'forms' };
   return { area, page: 'home' };
 }
 
@@ -44,6 +48,7 @@ export function PortalApp() {
   const [path, setPath] = useState(window.location.pathname);
   const [beneficiaries, setBeneficiaries] = useState(demoBeneficiaries);
   const [enrollments, setEnrollments] = useState(demoEnrollments);
+  const [submissions, setSubmissions] = useState<FichaSubmission[]>([]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [toast, setToast] = useState('');
   const [query, setQuery] = useState('');
@@ -68,6 +73,7 @@ export function PortalApp() {
           { key: 'home', label: 'Visão geral', href: '/portal', icon: LayoutDashboard },
           { key: 'beneficiaries', label: 'Beneficiários', href: '/portal/beneficiarios', icon: Users },
           { key: 'enrollments', label: 'Matrículas', href: '/portal/matriculas', icon: ClipboardList },
+          { key: 'forms', label: 'Fichas', href: '/portal/fichas', icon: FileText },
           { key: 'tracking', label: 'Acompanhamento', href: '/portal/acompanhamento', icon: Activity },
         ];
 
@@ -129,6 +135,21 @@ export function PortalApp() {
     navigate('/portal/beneficiarios');
   };
 
+  const submitFicha = (kind: FichaKind, beneficiaryId: string, formData: FormData) => {
+    const data: Record<string, string> = {};
+    formData.forEach((value, key) => { if (typeof value === 'string') data[key] = value; });
+    const submission: FichaSubmission = {
+      id: `FIC-DEMO-${Date.now().toString().slice(-6)}`,
+      kind,
+      beneficiaryId,
+      submittedAt: new Date().toISOString().slice(0, 10),
+      data,
+    };
+    setSubmissions((previous) => [submission, ...previous]);
+    showToast('Ficha enviada nesta demonstração.');
+    navigate('/portal/fichas');
+  };
+
   const submitEnrollment = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -185,7 +206,8 @@ export function PortalApp() {
               const Icon = item.icon;
               const active = current.page === item.key ||
                 (item.key === 'enrollments' && current.page === 'enrollment-detail') ||
-                (item.key === 'beneficiaries' && current.page === 'beneficiary-detail');
+                (item.key === 'beneficiaries' && current.page === 'beneficiary-detail') ||
+                (item.key === 'forms' && current.page === 'form');
               return <a key={item.href + item.label} className={`${styles.navLink} ${active ? styles.navActive : ''}`} href={item.href} onClick={(event) => { event.preventDefault(); navigate(item.href); }}><Icon size={17} />{item.label}</a>;
             })}
           </nav>
@@ -208,6 +230,10 @@ export function PortalApp() {
         {current.page === 'enrollment-new' && <EnrollmentForm beneficiaries={beneficiaries.filter((item) => item.parentId === demoParent.id)} onSubmit={submitEnrollment} onCancel={() => navigate('/portal/matriculas')} />}
         {current.page === 'enrollment-detail' && <EnrollmentDetail enrollment={currentEnrollment} beneficiary={currentEnrollment ? relatedBeneficiary(currentEnrollment.beneficiaryId) : undefined} area={current.area} newEnrollment={currentEnrollment?.id === newEnrollmentId} onAction={(enrollmentId, action) => { setReason(''); setPendingAction({ enrollmentId, action }); }} link={link} />}
         {current.page === 'tracking' && <TrackingPage area={current.area} beneficiaries={beneficiaries} enrollments={visibleEnrollments} navigate={navigate} />}
+        {current.area === 'portal' && current.page === 'forms' && <FichasHub submissions={submissions} beneficiaries={beneficiaries.filter((item) => item.parentId === demoParent.id)} navigate={navigate} />}
+        {current.area === 'portal' && current.page === 'form' && (isFichaKind(current.id)
+          ? <FichaPage kind={current.id} beneficiaries={beneficiaries.filter((item) => item.parentId === demoParent.id)} onSubmit={submitFicha} navigate={navigate} />
+          : <EmptyState title="Ficha não encontrada" description="Escolha uma das fichas disponíveis." action={<button className={styles.buttonSecondary} onClick={() => navigate('/portal/fichas')}>Voltar para fichas</button>} />)}
         {current.page === 'responsibles' && <Responsibles beneficiaries={beneficiaries} enrollments={enrollments} />}
         {current.page === 'reports' && <Reports enrollments={enrollments} beneficiaries={beneficiaries} />}
       </main>
