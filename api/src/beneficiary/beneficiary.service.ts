@@ -1,14 +1,22 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Beneficiary } from "@prisma/client";
 import { PrismaService } from '../database/prisma.service.js';
+import { ParentService } from '../parent/parent.service.js';
 
 import { ICreateBeneficiary } from './dto/beneficiary-create.dto.js';
 import { IFindBeneficiary } from './dto/beneficiary-find.dto.js';
 import { IUpdateBeneficiary } from './dto/beneficiary-update.dto.js';
+import { AnamneseService } from '../anamnese/anamnese.service.js';
+import { RelativiesService } from '../relativies/relativies.service.js';
 
 @Injectable()
 export class BeneficiaryService {
-    constructor(private readonly PrismaService: PrismaService){};
+    constructor(
+        private readonly PrismaService: PrismaService, 
+        private readonly ParentService: ParentService,
+        private readonly AnamneseService: AnamneseService,
+        private readonly RelativiesService: RelativiesService
+    ){};
 
     async create(data: ICreateBeneficiary): Promise<Beneficiary | undefined> {
         try {
@@ -21,10 +29,65 @@ export class BeneficiaryService {
                     cpf: data.cpf,
                     school: data.school,
                     period: data.period,
-                    health_info: data.health_info_id ? {
-                        connect: {id: data.health_info_id}
-                    } : undefined
+                    religion: data.religion,
+                    story: data.story
                 }
+            });
+
+            const address_data = data.address
+            const address = await this.PrismaService.address.create({
+                data: {
+                    beneficiary_id: beneficiary.id,
+                    streetAddress: address_data.streetAddress,
+                    house_number: address_data.housing_number,
+                    neighborhood: address_data.neighborhood,
+                    landmark: address_data.landmark,
+                    housingType: address_data.housingType,
+                    housingCost: address_data.housingCost,
+                    waterCost: address_data.waterCost,
+                    powerCost: address_data.powerCost,
+                    foodCost: address_data.foodCost,
+                    gasCost: address_data.gasCost
+                }
+            })
+
+            const incomeAndBenefits_data = data.incomeAndBenefits
+            const incomeAndBenefits = await this.PrismaService.incomeAndBenefits.create({
+                data: {
+                    beneficiary_id: beneficiary.id,
+                    nis: incomeAndBenefits_data.nis,
+                    totalIncome: incomeAndBenefits_data.totalIncome,
+                    perCapitaIncome: incomeAndBenefits_data.perCapitaIncome,
+                    hasGovernmentBenefit: incomeAndBenefits_data.hasGovernmentBenefit,
+                    benefitName: incomeAndBenefits_data.benefitName,
+                    benefitValue: incomeAndBenefits_data.benefitValue
+                }
+            })
+            
+            const anamnese_form = await this.AnamneseService.create({
+                ...data.anamnese,
+                beneficiary_id: beneficiary.id
+            });
+
+            const parents_promise = data.parents.map(async (parent_data) => {
+                const parent = await this.ParentService.create(parent_data);
+                const relationship = await this.PrismaService.parentBenificiary.create({
+                    data: {
+                        beneficiary_id: beneficiary.id,
+                        parent_id: parent!.id,
+                        relationshipType: parent_data.relation_type
+                    }
+                })
+            });
+
+            const relativies_promise = data.relativies!.map(async (relativies_data) => {
+                const data = {...relativies_data, beneficiary_id: beneficiary.id};
+                const relativies = await this.RelativiesService.create(data);
+            });
+
+            const authorizedEscorts_promise = data.authorizedEscorts!.map(async (authorizedEscorts_data) => {
+                const data = {...authorizedEscorts_data, beneficiary_id: beneficiary.id};
+                const authorizedEscorts = await this.PrismaService.authorizedEscorts.create({data});
             });
 
             return beneficiary;

@@ -7,70 +7,170 @@ datasource db {
 }
 
 model User {
-  id                  String    @id @default(uuid())
-  email               String    @unique
-  password            String
-  parent              Parent?
+  id       String  @id @default(uuid())
+  email    String  @unique
+  password String
+  parent   Parent?
 
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Beneficiary {
-  id                  String    @id @default(uuid())
-  name                String
-  birthday            DateTime  @db.Date
-  rg                  Int
-  cpf                 Int       @unique
-  school              String
-  period              String
-  health_info         health_info?
-  parent              ParentBenificiary[]
+  id                String              @id @default(uuid())
+  name              String
+  birthday          DateTime            @db.Date
+  rg                Int
+  cpf               Int                 @unique
+  school            String
+  period            String
+  religion          String
+  story             String              @db.Text
+  incomeAndBenefits IncomeAndBenefits?
+  anamnese          Anamnese?
+  address           Address?
+  relativies        Relatives[]
+  parent            ParentBenificiary[]
+  AuthorizedEscorts AuthorizedEscorts[]
 
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  addressId String?
 }
 
-model health_info {
-  id                  String  @id @default(uuid())
-  beneficiary_id      String  @unique
-  health_problem      String?
-  medical_tratament   String?
-  allergy             String?
-  previous_illnesses  String?
-  beneficiary         Beneficiary @relation(fields: [beneficiary_id], references: [id])
+model Address {
+  id             String @id @default(uuid())
+  beneficiary_id String @unique
 
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  streetAddress String
+  house_number  Int
+  neighborhood  String
+  landmark      String?
+  housingType   Int
+  housingCost   Decimal? @db.Decimal(10, 2)
+  waterCost     Decimal? @db.Decimal(10, 2)
+  powerCost     Decimal? @db.Decimal(10, 2)
+  foodCost      Decimal? @db.Decimal(10, 2)
+  gasCost       Decimal? @db.Decimal(10, 2)
+
+  beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model IncomeAndBenefits {
+  id             String @id @default(uuid())
+  beneficiary_id String @unique
+
+  nis                  String?
+  totalIncome          Decimal  @db.Decimal(10, 2)
+  perCapitaIncome      Decimal  @db.Decimal(10, 2)
+  hasGovernmentBenefit Boolean
+  benefitName          String?
+  benefitValue         Decimal? @db.Decimal(10, 2)
+
+  beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuthorizedEscorts {
+  id             String @id @default(uuid())
+  beneficiary_id String
+
+  name     String
+  relation Int
+  contact  String
+
+  beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Anamnese {
+  id             String @id @default(uuid())
+  beneficiary_id String @unique
+
+  mainComplaintEvolution  String  @db.Text
+  suffersFromDisease      Boolean
+  diseaseDescription      String?
+  underMedicalTreatment   Boolean
+  isPregnant              Boolean @default(false)
+  usesMedication          Boolean
+  medicationDescription   String?
+  attendingPhysicianName  String?
+  attendingPhysicianPhone String?
+  hasAllergies            Boolean
+  allergiesDescription    String?
+  hasHadSurgery           Boolean
+  surgeriesDescription    String?
+  healingProblems         Boolean
+  anesthesiaProblems      Boolean
+  hemorrhageProblems      Boolean
+
+  rheumaticFever          Boolean @default(false)
+  heartProblems           Boolean @default(false)
+  kidneyProblems          Boolean @default(false)
+  gastricProblems         Boolean @default(false)
+  respiratoryProblems     Boolean @default(false)
+  allergicProblems        Boolean @default(false)
+  jointRheumatismProblems Boolean @default(false)
+  diabetes                Boolean @default(false)
+  arterialHypertension    Boolean @default(false)
+
+  habits           String? @db.Text
+  familyHistory    String? @db.Text
+  otherInformation String? @db.Text
+
+  beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Parent {
-  id                  String        @id @default(uuid())
-  user_id             String?       @unique
-  name                String
-  cpf                 Int           @unique
-  contact             String
-  email               String        @unique
-  profession          String?
-  educational_level   String?
-  comertial_address   String?
-  salary              Float?
-  user                User?         @relation(fields: [user_id], references: [id])
-  beneficiary         ParentBenificiary[]
+  id                String              @id @default(uuid())
+  user_id           String?             @unique
+  name              String
+  cpf               Int                 @unique
+  contact           String
+  email             String              @unique
+  profession        String?
+  educational_level String?
+  comertial_address String?
+  salary            Decimal?            @db.Decimal(10, 2)
+  user              User?               @relation(fields: [user_id], references: [id])
+  beneficiary       ParentBenificiary[]
 
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Relatives {
+  id             String   @id @default(uuid())
+  beneficiary_id String
+  name           String
+  birthday       DateTime
+  relation       Int
+  salary         Decimal  @db.Decimal(10, 2)
+
+  beneficiary Beneficiary? @relation(fields: [beneficiary_id], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ParentBenificiary {
-  id                String      @id @default(uuid())
-  beneficiary_id    String      @unique
-  parent_id         String      @unique
-  relationshipType  String
+  id               String @id @default(uuid())
+  beneficiary_id   String
+  parent_id        String @unique
+  relationshipType Int
 
-  beneficiary       Beneficiary @relation(fields: [beneficiary_id], references: [id])
-  parent            Parent      @relation(fields: [parent_id], references: [id])
+  beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
+  parent      Parent      @relation(fields: [parent_id], references: [id])
 
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

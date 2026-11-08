@@ -1,0 +1,18 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { RelativiesService } from './relativies.service.js';
+
+describe('RelativiesService', () => {
+  let service: RelativiesService;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [RelativiesService],
+    }).compile();
+
+    service = module.get<RelativiesService>(RelativiesService);
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});

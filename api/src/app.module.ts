@@ -4,8 +4,10 @@ import { UserModule } from './user/user.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ParentModule } from './parent/parent.module.js';
 import { BeneficiaryModule } from './beneficiary/beneficiary.module.js';
+import { AnamneseModule } from './anamnese/anamnese.module.js';
+import { RelativiesModule } from './relativies/relativies.module.js';
 
 @Module({
-  imports: [DatabaseModule, UserModule, AuthModule, ParentModule, BeneficiaryModule]
+  imports: [DatabaseModule, UserModule, AuthModule, ParentModule, BeneficiaryModule, AnamneseModule, RelativiesModule]
 })
 export class AppModule {}
