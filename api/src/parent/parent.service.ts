@@ -39,7 +39,7 @@ export class ParentService {
             const parent = await this.PrismaService.parent.findFirst({where: data});
             return parent;
         } catch(E: any) {
-            throw new InternalServerErrorException("Erro ao tentar encontrar usuário");
+            throw new InternalServerErrorException("Erro ao tentar encontrar responsável");
         }
     }
 

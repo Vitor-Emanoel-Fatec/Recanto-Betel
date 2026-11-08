@@ -17,15 +17,16 @@ model User {
 }
 
 model Beneficiary {
-  id       String              @id @default(uuid())
-  name     String
-  birthday DateTime            @db.Date
-  rg       Int
-  cpf      Int                 @unique
-  school   String
-  period   String
-  anamnese Anamnese?
-  parent   ParentBenificiary[]
+  id         String              @id @default(uuid())
+  name       String
+  birthday   DateTime            @db.Date
+  rg         Int
+  cpf        Int                 @unique
+  school     String
+  period     String
+  anamnese   Anamnese?
+  relativies Relatives[]
+  parent     ParentBenificiary[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -85,6 +86,20 @@ model Parent {
   salary            Float?
   user              User?               @relation(fields: [user_id], references: [id])
   beneficiary       ParentBenificiary[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Relatives {
+  id             String   @id @default(uuid())
+  beneficiary_id String
+  name           String
+  birthday       DateTime
+  relation       Int
+  salary         Float
+
+  beneficiary Beneficiary? @relation(fields: [beneficiary_id], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
