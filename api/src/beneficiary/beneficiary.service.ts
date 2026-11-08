@@ -49,6 +49,19 @@ export class BeneficiaryService {
                     gasCost: address_data.gasCost
                 }
             })
+
+            const incomeAndBenefits_data = data.incomeAndBenefits
+            const incomeAndBenefits = await this.PrismaService.incomeAndBenefits.create({
+                data: {
+                    beneficiary_id: beneficiary.id,
+                    nis: incomeAndBenefits_data.nis,
+                    totalIncome: incomeAndBenefits_data.totalIncome,
+                    perCapitaIncome: incomeAndBenefits_data.perCapitaIncome,
+                    hasGovernmentBenefit: incomeAndBenefits_data.hasGovernmentBenefit,
+                    benefitName: incomeAndBenefits_data.benefitName,
+                    benefitValue: incomeAndBenefits_data.benefitValue
+                }
+            })
             
             const anamnese_form = await this.AnamneseService.create({
                 ...data.anamnese,
@@ -69,6 +82,11 @@ export class BeneficiaryService {
             const relativies_promise = data.relativies!.map(async (relativies_data) => {
                 const data = {...relativies_data, beneficiary_id: beneficiary.id};
                 const relativies = await this.RelativiesService.create(data);
+            });
+
+            const authorizedEscorts_promise = data.authorizedEscorts!.map(async (authorizedEscorts_data) => {
+                const data = {...authorizedEscorts_data, beneficiary_id: beneficiary.id};
+                const authorizedEscorts = await this.PrismaService.authorizedEscorts.create({data});
             });
 
             return beneficiary;

@@ -15,6 +15,24 @@ interface Address {
   gasCost: number
 }
 
+interface IncomeAndBenefits {
+  id: string;
+  nis: string | null;
+  totalIncome: number;
+  perCapitaIncome: number;
+  hasGovernmentBenefit: boolean;
+  benefitName: string | null;
+  benefitValue: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface AuthorizedEscorts {
+  name: string,
+  relation: number,
+  contact: string
+}
+
 export interface ICreateBeneficiary {
     health_info_id?: string,
     user_id?: string,
@@ -27,8 +45,10 @@ export interface ICreateBeneficiary {
     period: string,
     religion: string,
 
+    incomeAndBenefits: IncomeAndBenefits,
     address: Address,
     parents: ICreateParent[],
     relativies?: ICreateRelativies[],
+    authorizedEscorts?: AuthorizedEscorts[],
     anamnese: ICreateAnamnese
 }

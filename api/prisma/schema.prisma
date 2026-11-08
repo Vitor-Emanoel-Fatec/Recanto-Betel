@@ -17,18 +17,20 @@ model User {
 }
 
 model Beneficiary {
-  id         String              @id @default(uuid())
-  name       String
-  birthday   DateTime            @db.Date
-  rg         Int
-  cpf        Int                 @unique
-  school     String
-  period     String
-  religion   String
-  anamnese   Anamnese?
-  address    Address?
-  relativies Relatives[]
-  parent     ParentBenificiary[]
+  id                String              @id @default(uuid())
+  name              String
+  birthday          DateTime            @db.Date
+  rg                Int
+  cpf               Int                 @unique
+  school            String
+  period            String
+  religion          String
+  incomeAndBenefits IncomeAndBenefits?
+  anamnese          Anamnese?
+  address           Address?
+  relativies        Relatives[]
+  parent            ParentBenificiary[]
+  AuthorizedEscorts AuthorizedEscorts[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -44,15 +46,46 @@ model Address {
   neighborhood  String
   landmark      String?
   housingType   Int
-  housingCost   Decimal?
-  waterCost     Decimal?
-  powerCost     Decimal?
-  foodCost      Decimal?
-  gasCost       Decimal?
+  housingCost   Decimal? @db.Decimal(10, 2)
+  waterCost     Decimal? @db.Decimal(10, 2)
+  powerCost     Decimal? @db.Decimal(10, 2)
+  foodCost      Decimal? @db.Decimal(10, 2)
+  gasCost       Decimal? @db.Decimal(10, 2)
 
   beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+}
+
+model IncomeAndBenefits {
+  id             String @id @default(uuid())
+  beneficiary_id String @unique
+
+  nis                  String?
+  totalIncome          Decimal  @db.Decimal(10, 2)
+  perCapitaIncome      Decimal  @db.Decimal(10, 2)
+  hasGovernmentBenefit Boolean
+  benefitName          String?
+  benefitValue         Decimal? @db.Decimal(10, 2)
+
+  beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuthorizedEscorts {
+  id             String @id @default(uuid())
+  beneficiary_id String
+
+  name     String
+  relation Int
+  contact  String
+
+  beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Anamnese {
@@ -106,7 +139,7 @@ model Parent {
   profession        String?
   educational_level String?
   comertial_address String?
-  salary            Float?
+  salary            Decimal?            @db.Decimal(10, 2)
   user              User?               @relation(fields: [user_id], references: [id])
   beneficiary       ParentBenificiary[]
 
@@ -120,7 +153,7 @@ model Relatives {
   name           String
   birthday       DateTime
   relation       Int
-  salary         Float
+  salary         Decimal  @db.Decimal(10, 2)
 
   beneficiary Beneficiary? @relation(fields: [beneficiary_id], references: [id])
 
