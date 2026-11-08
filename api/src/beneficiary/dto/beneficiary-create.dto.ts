@@ -44,6 +44,7 @@ export interface ICreateBeneficiary {
     school: string,
     period: string,
     religion: string,
+    story: string,
 
     incomeAndBenefits: IncomeAndBenefits,
     address: Address,

@@ -29,7 +29,8 @@ export class BeneficiaryService {
                     cpf: data.cpf,
                     school: data.school,
                     period: data.period,
-                    religion: data.religion
+                    religion: data.religion,
+                    story: data.story
                 }
             });
 

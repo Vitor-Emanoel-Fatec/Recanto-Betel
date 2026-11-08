@@ -25,6 +25,7 @@ model Beneficiary {
   school            String
   period            String
   religion          String
+  story             String              @db.Text
   incomeAndBenefits IncomeAndBenefits?
   anamnese          Anamnese?
   address           Address?
