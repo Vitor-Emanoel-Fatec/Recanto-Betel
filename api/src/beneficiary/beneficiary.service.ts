@@ -29,12 +29,27 @@ export class BeneficiaryService {
                     cpf: data.cpf,
                     school: data.school,
                     period: data.period,
-                    health_info: data.health_info_id ? {
-                        connect: {id: data.health_info_id}
-                    } : undefined
+                    religion: data.religion
                 }
             });
 
+            const address_data = data.address
+            const address = await this.PrismaService.address.create({
+                data: {
+                    beneficiary_id: beneficiary.id,
+                    streetAddress: address_data.streetAddress,
+                    house_number: address_data.housing_number,
+                    neighborhood: address_data.neighborhood,
+                    landmark: address_data.landmark,
+                    housingType: address_data.housingType,
+                    housingCost: address_data.housingCost,
+                    waterCost: address_data.waterCost,
+                    powerCost: address_data.powerCost,
+                    foodCost: address_data.foodCost,
+                    gasCost: address_data.gasCost
+                }
+            })
+            
             const anamnese_form = await this.AnamneseService.create({
                 ...data.anamnese,
                 beneficiary_id: beneficiary.id

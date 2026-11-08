@@ -24,12 +24,35 @@ model Beneficiary {
   cpf        Int                 @unique
   school     String
   period     String
+  religion   String
   anamnese   Anamnese?
+  address    Address?
   relativies Relatives[]
   parent     ParentBenificiary[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  addressId String?
+}
+
+model Address {
+  id             String @id @default(uuid())
+  beneficiary_id String @unique
+
+  streetAddress String
+  house_number  Int
+  neighborhood  String
+  landmark      String?
+  housingType   Int
+  housingCost   Decimal?
+  waterCost     Decimal?
+  powerCost     Decimal?
+  foodCost      Decimal?
+  gasCost       Decimal?
+
+  beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
 model Anamnese {
