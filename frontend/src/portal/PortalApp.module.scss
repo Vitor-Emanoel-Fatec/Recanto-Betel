@@ -125,7 +125,6 @@
 .quickLink strong { font-size: .8rem; }
 .quickLink small { color: $color-text-muted; font-size: .69rem; }
 .helperNote { margin-top: 16px; color: $color-text-muted; font-size: .73rem; line-height: 1.5; }
-
 .badge { display: inline-flex; align-items: center; gap: 6px; width: fit-content; padding: 5px 9px; border-radius: $radius-full; font-size: .67rem; font-weight: 750; white-space: nowrap; }
 .badge > span { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .badge_positive { color: #286744; background: #eaf6ed; }

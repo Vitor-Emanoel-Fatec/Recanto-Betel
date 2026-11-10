@@ -1,7 +1,7 @@
 export interface ICreateParent {
     user_id?: string,
     name: string,
-    cpf: number,
+    cpf: string,
     contact: string,
     email: string,
     profession?: string,

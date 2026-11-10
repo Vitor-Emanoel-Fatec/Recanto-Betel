@@ -17,7 +17,7 @@ CREATE TABLE `Beneficiary` (
     `name` VARCHAR(191) NOT NULL,
     `birthday` DATE NOT NULL,
     `rg` INTEGER NOT NULL,
-    `cpf` INTEGER NOT NULL,
+    `cpf` VARCHAR(11) NOT NULL,
     `school` VARCHAR(191) NOT NULL,
     `period` VARCHAR(191) NOT NULL,
     `religion` VARCHAR(191) NOT NULL,
@@ -86,34 +86,35 @@ CREATE TABLE `AuthorizedEscorts` (
 CREATE TABLE `Anamnese` (
     `id` VARCHAR(191) NOT NULL,
     `beneficiary_id` VARCHAR(191) NOT NULL,
-    `mainComplaintEvolution` TEXT NOT NULL,
-    `suffersFromDisease` BOOLEAN NOT NULL,
+    `mainComplaintEvolution` TEXT NULL,
+    `suffersFromDisease` BOOLEAN NULL,
     `diseaseDescription` VARCHAR(191) NULL,
-    `underMedicalTreatment` BOOLEAN NOT NULL,
-    `isPregnant` BOOLEAN NOT NULL DEFAULT false,
-    `usesMedication` BOOLEAN NOT NULL,
+    `underMedicalTreatment` BOOLEAN NULL,
+    `isPregnant` BOOLEAN NULL DEFAULT false,
+    `usesMedication` BOOLEAN NULL,
     `medicationDescription` VARCHAR(191) NULL,
     `attendingPhysicianName` VARCHAR(191) NULL,
     `attendingPhysicianPhone` VARCHAR(191) NULL,
-    `hasAllergies` BOOLEAN NOT NULL,
+    `hasAllergies` BOOLEAN NULL,
     `allergiesDescription` VARCHAR(191) NULL,
-    `hasHadSurgery` BOOLEAN NOT NULL,
+    `hasHadSurgery` BOOLEAN NULL,
     `surgeriesDescription` VARCHAR(191) NULL,
-    `healingProblems` BOOLEAN NOT NULL,
-    `anesthesiaProblems` BOOLEAN NOT NULL,
-    `hemorrhageProblems` BOOLEAN NOT NULL,
-    `rheumaticFever` BOOLEAN NOT NULL DEFAULT false,
-    `heartProblems` BOOLEAN NOT NULL DEFAULT false,
-    `kidneyProblems` BOOLEAN NOT NULL DEFAULT false,
-    `gastricProblems` BOOLEAN NOT NULL DEFAULT false,
-    `respiratoryProblems` BOOLEAN NOT NULL DEFAULT false,
-    `allergicProblems` BOOLEAN NOT NULL DEFAULT false,
-    `jointRheumatismProblems` BOOLEAN NOT NULL DEFAULT false,
-    `diabetes` BOOLEAN NOT NULL DEFAULT false,
-    `arterialHypertension` BOOLEAN NOT NULL DEFAULT false,
+    `healingProblems` BOOLEAN NULL,
+    `anesthesiaProblems` BOOLEAN NULL,
+    `hemorrhageProblems` BOOLEAN NULL,
+    `rheumaticFever` BOOLEAN NULL,
+    `heartProblems` BOOLEAN NULL,
+    `kidneyProblems` BOOLEAN NULL,
+    `gastricProblems` BOOLEAN NULL,
+    `respiratoryProblems` BOOLEAN NULL,
+    `allergicProblems` BOOLEAN NULL,
+    `jointRheumatismProblems` BOOLEAN NULL,
+    `diabetes` BOOLEAN NULL,
+    `arterialHypertension` BOOLEAN NULL,
     `habits` TEXT NULL,
     `familyHistory` TEXT NULL,
     `otherInformation` TEXT NULL,
+    `isComplete` BOOLEAN NOT NULL DEFAULT true,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
@@ -126,7 +127,7 @@ CREATE TABLE `Parent` (
     `id` VARCHAR(191) NOT NULL,
     `user_id` VARCHAR(191) NULL,
     `name` VARCHAR(191) NOT NULL,
-    `cpf` INTEGER NOT NULL,
+    `cpf` VARCHAR(11) NOT NULL,
     `contact` VARCHAR(191) NOT NULL,
     `email` VARCHAR(191) NOT NULL,
     `profession` VARCHAR(191) NULL,
@@ -165,7 +166,36 @@ CREATE TABLE `ParentBenificiary` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
-    UNIQUE INDEX `ParentBenificiary_parent_id_key`(`parent_id`),
+    UNIQUE INDEX `ParentBenificiary_beneficiary_id_parent_id_key`(`beneficiary_id`, `parent_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `Enrollment` (
+    `id` VARCHAR(191) NOT NULL,
+    `parent_id` VARCHAR(191) NOT NULL,
+    `beneficiary_id` VARCHAR(191) NOT NULL,
+    `status` ENUM('PENDING', 'ACCEPTED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
+    `decisionNote` TEXT NULL,
+    `submittedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    INDEX `Enrollment_parent_id_status_idx`(`parent_id`, `status`),
+    INDEX `Enrollment_beneficiary_id_status_idx`(`beneficiary_id`, `status`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `EnrollmentEvent` (
+    `id` VARCHAR(191) NOT NULL,
+    `enrollment_id` VARCHAR(191) NOT NULL,
+    `actor_id` VARCHAR(191) NULL,
+    `type` ENUM('SUBMITTED', 'ACCEPTED', 'REJECTED', 'RETURNED_TO_PENDING') NOT NULL,
+    `note` TEXT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `EnrollmentEvent_enrollment_id_createdAt_idx`(`enrollment_id`, `createdAt`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -192,3 +222,15 @@ ALTER TABLE `ParentBenificiary` ADD CONSTRAINT `ParentBenificiary_beneficiary_id
 
 -- AddForeignKey
 ALTER TABLE `ParentBenificiary` ADD CONSTRAINT `ParentBenificiary_parent_id_fkey` FOREIGN KEY (`parent_id`) REFERENCES `Parent`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Enrollment` ADD CONSTRAINT `Enrollment_parent_id_fkey` FOREIGN KEY (`parent_id`) REFERENCES `Parent`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Enrollment` ADD CONSTRAINT `Enrollment_beneficiary_id_fkey` FOREIGN KEY (`beneficiary_id`) REFERENCES `Beneficiary`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `EnrollmentEvent` ADD CONSTRAINT `EnrollmentEvent_enrollment_id_fkey` FOREIGN KEY (`enrollment_id`) REFERENCES `Enrollment`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `EnrollmentEvent` ADD CONSTRAINT `EnrollmentEvent_actor_id_fkey` FOREIGN KEY (`actor_id`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

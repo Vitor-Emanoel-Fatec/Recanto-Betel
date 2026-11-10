@@ -1,6 +1,6 @@
 export interface IUpdateParent {
     name?: string,
-    cpf?: number,
+    cpf?: string,
     contact?: string,
     email?: string,
     profession?: string,

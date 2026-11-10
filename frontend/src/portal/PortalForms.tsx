@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from 'react';
 import { ArrowRight, Check, ClipboardList, FileText, HeartPulse, ShieldCheck, Stethoscope } from 'lucide-react';
 import styles from './PortalApp.module.scss';
-import { demoParent, type Beneficiary, type FichaKind, type FichaSubmission } from './demoData';
+import { type Beneficiary, type FichaKind, type FichaSubmission } from './portalData';
 
 export const FICHAS: { kind: FichaKind; title: string; description: string; icon: typeof FileText }[] = [
   { kind: 'matricula', title: 'Ficha de matrícula', description: 'Dados da criança, responsáveis, composição familiar e endereço.', icon: FileText },
@@ -97,11 +97,11 @@ function SignatureSection() {
   return (
     <div className={styles.formSection}>
       <h2>Local, data e assinatura</h2>
-      <p>Ao digitar seu nome você confirma que as informações são verdadeiras. Nesta demonstração, isso não tem validade jurídica.</p>
+      <p>Revise as informações antes de preencher a assinatura.</p>
       <div className={styles.formGrid}>
         <label className={styles.field}>Local<input name="local" value="Tatuí" readOnly /></label>
         <label className={styles.field}>Data<input name="data" type="date" value={todayIso()} readOnly /></label>
-        <Text label="Nome do responsável legal (assinatura)" name="assinatura" wide required defaultValue={demoParent.name} autoComplete="name" />
+        <Text label="Nome do responsável legal (assinatura)" name="assinatura" wide required autoComplete="name" />
       </div>
     </div>
   );
@@ -154,7 +154,7 @@ function FichaShell({ title, description, beneficiaries, onSubmit, onCancel, chi
 
         <div className={styles.formFooter}>
           <button type="button" className={styles.buttonSecondary} onClick={onCancel}>Cancelar</button>
-          <button type="submit" className={styles.buttonPrimary}><Check size={17} /> Enviar ficha demonstrativa</button>
+          <button type="submit" className={styles.buttonPrimary}><Check size={17} /> Enviar ficha</button>
         </div>
       </form>
     </>
@@ -290,7 +290,7 @@ function MatriculaForm({ beneficiaries, onSubmit, onCancel }: FormProps) {
             <p>Registro da matrícula. Rematrículas futuras serão adicionadas pela equipe.</p>
             <div className={styles.formGrid}>
               <label className={styles.field}>Data<input name="dataMatricula" type="date" value={todayIso()} readOnly /></label>
-              <Text label="Responsável (assinatura)" name="assinatura" required defaultValue={demoParent.name} autoComplete="name" />
+              <Text label="Responsável (assinatura)" name="assinatura" required autoComplete="name" />
             </div>
           </div>
         </>
@@ -367,7 +367,7 @@ function AutorizacaoForm({ beneficiaries, onSubmit, onCancel }: FormProps) {
           <div className={styles.formSection}>
             <h2>Responsável</h2>
             <div className={styles.formGrid}>
-              <Text label="Nome do responsável" name="responsavelNome" required defaultValue={demoParent.name} autoComplete="name" />
+              <Text label="Nome do responsável" name="responsavelNome" required autoComplete="name" />
               <Text label="CPF do responsável" name="responsavelCpf" required inputMode="numeric" maxLength={14} placeholder="000.000.000-00" />
             </div>
           </div>
@@ -517,7 +517,7 @@ export function FichasHub({ submissions, beneficiaries, navigate }: {
         </section>
 
         <section className={styles.panel}>
-          <div className={styles.panelHeading}><div><h2>Enviadas nesta sessão</h2><p>Não persistem após recarregar</p></div></div>
+          <div className={styles.panelHeading}><div><h2>Enviadas nesta sessão</h2><p>A anamnese é salva na API; esta lista é temporária</p></div></div>
           {submissions.length ? (
             <div className={styles.activityList}>
               {submissions.map((item) => {

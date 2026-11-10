@@ -1,20 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { ParentController } from './parent.controller.js';
-import { ParentService } from './parent.service.js';
 
 describe('ParentController', () => {
-  let controller: ParentController;
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [ParentController],
-      providers: [ParentService],
-    }).compile();
-
-    controller = module.get<ParentController>(ParentController);
-  });
-
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  it('protects direct Parent CRUD behind authenticated Admin access', () => {
+    expect(Reflect.getMetadata('__guards__', ParentController)).toHaveLength(2);
+    expect(Reflect.getMetadata('roles', ParentController)).toEqual(['ADMIN']);
   });
 });

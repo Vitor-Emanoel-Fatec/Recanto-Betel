@@ -1,49 +1,62 @@
-import { 
-  Controller,
+import {
   Body,
-  Param,
-  Post,
-  Put,
+  Controller,
   Delete,
   HttpCode,
   HttpStatus,
-  Res
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import type { AuthenticatedRequest } from '../auth/authenticated-user.js';
 import { AnamneseService } from './anamnese.service.js';
-import type { ICreateAnamnese } from './dto/anamnese-create.dto.js';
-import type { Response } from "express";
-import type { IFindAnamnese } from './dto/anamnese-find.dto.js';
-import type { IUpdateAnamnese } from './dto/anamnese-update.dto.js';
+import { ICreateAnamnese } from './dto/anamnese-create.dto.js';
+import { IFindAnamnese } from './dto/anamnese-find.dto.js';
+import { IUpdateAnamnese } from './dto/anamnese-update.dto.js';
 
 @Controller('anamnese')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class AnamneseController {
   constructor(private readonly anamneseService: AnamneseService) {}
 
-  @Post("")
+  @Post()
+  @Roles('ADMIN', 'PARENT')
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() body: ICreateAnamnese, @Res() response: Response): Promise<void> {
-    const result = await this.anamneseService.create(body);
-    response.json(result);
+  create(@Req() request: AuthenticatedRequest, @Body() data: ICreateAnamnese) {
+    return this.anamneseService.create(request.user, data);
   }
 
-  @Post("find")
-  @HttpCode(HttpStatus.FOUND)
-  async findBeneficiary(@Body() data: IFindAnamnese, @Res() response: Response): Promise<void> {
-    const result = await this.anamneseService.findAnamnese(data);
-    response.json(result);
-  }
-    
-  @Put(":id")
+  @Post('find')
+  @Roles('ADMIN', 'PARENT')
   @HttpCode(HttpStatus.OK)
-  async updateBeneficiary(@Param("id") id: string, @Body() data: IUpdateAnamnese, @Res() response: Response): Promise<void> {
-    const result = await this.anamneseService.updateAnamnese(id, data);
-    response.json(result);
+  find(@Req() request: AuthenticatedRequest, @Body() data: IFindAnamnese) {
+    return this.anamneseService.findAnamnese(request.user, data);
   }
-  
-  @Delete(":id")
+
+  @Put(':id')
+  @Roles('ADMIN', 'PARENT')
+  @HttpCode(HttpStatus.OK)
+  update(
+    @Req() request: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() data: IUpdateAnamnese,
+  ) {
+    return this.anamneseService.updateAnamnese(request.user, id, data);
+  }
+
+  @Delete(':id')
+  @Roles('ADMIN')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteBeneficiary(@Param("id") id: string, @Res() response: Response): Promise<void> {
-    const result = await this.anamneseService.deleteAnamnese(id);
-    response.json(result);
+  async delete(
+    @Req() request: AuthenticatedRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    await this.anamneseService.deleteAnamnese(request.user, id);
   }
 }

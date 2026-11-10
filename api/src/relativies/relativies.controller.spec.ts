@@ -1,20 +1,8 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { RelativiesController } from './relativies.controller.js';
-import { RelativiesService } from './relativies.service.js';
 
 describe('RelativiesController', () => {
-  let controller: RelativiesController;
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [RelativiesController],
-      providers: [RelativiesService],
-    }).compile();
-
-    controller = module.get<RelativiesController>(RelativiesController);
-  });
-
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  it('protects family data behind authenticated Admin access', () => {
+    expect(Reflect.getMetadata('__guards__', RelativiesController)).toHaveLength(2);
+    expect(Reflect.getMetadata('roles', RelativiesController)).toEqual(['ADMIN']);
   });
 });

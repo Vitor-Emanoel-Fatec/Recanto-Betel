@@ -65,7 +65,7 @@ export class BeneficiaryService {
                 }
             })
             
-            const anamnese_form = await this.AnamneseService.create({
+            const anamnese_form = await this.AnamneseService.createForBeneficiary({
                 ...data.anamnese,
                 beneficiary_id: beneficiary.id
             });
