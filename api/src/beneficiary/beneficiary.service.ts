@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Beneficiary } from "@prisma/client";
 import { PrismaService } from '../database/prisma.service.js';
 import { ParentService } from '../parent/parent.service.js';
@@ -30,7 +30,8 @@ export class BeneficiaryService {
                     school: data.school,
                     period: data.period,
                     religion: data.religion,
-                    story: data.story
+                    story: data.story,
+                    status: 'PENDING'
                 }
             });
 
@@ -114,6 +115,50 @@ export class BeneficiaryService {
             })
         } catch(E: any) {
             throw new InternalServerErrorException("Erro ao tentar atualizar beneficiário");
+        }
+    }
+
+    async approveBeneficiary(id: string): Promise<void> {
+        try {
+            const beneficiary = await this.PrismaService.beneficiary.findUnique({
+                where: { id }
+            });
+
+            if (!beneficiary) {
+                throw new NotFoundException("Beneficiário não encontrado");
+            }
+
+            await this.PrismaService.beneficiary.update({
+                where: { id },
+                data: { status: 'APPROVED' }
+            });
+        } catch (error: any) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new InternalServerErrorException("Erro ao tentar aprovar beneficiário");
+        }
+    }
+
+    async rejectBeneficiary(id: string): Promise<void> {
+        try {
+            const beneficiary = await this.PrismaService.beneficiary.findUnique({
+                where: { id }
+            });
+
+            if (!beneficiary) {
+                throw new NotFoundException("Beneficiário não encontrado");
+            }
+
+            await this.PrismaService.beneficiary.update({
+                where: { id },
+                data: { status: 'REJECTED' }
+            });
+        } catch (error: any) {
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new InternalServerErrorException("Erro ao tentar recusar beneficiário");
         }
     }
 

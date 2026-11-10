@@ -4,16 +4,24 @@ generator client {
 
 datasource db {
   provider = "mysql"
+  
 }
 
 model User {
   id       String  @id @default(uuid())
   email    String  @unique
   password String
+  role     String  @default("USER")
   parent   Parent?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum BeneficiaryStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model Beneficiary {
@@ -26,6 +34,7 @@ model Beneficiary {
   period            String
   religion          String
   story             String              @db.Text
+  status            BeneficiaryStatus   @default(PENDING)
   incomeAndBenefits IncomeAndBenefits?
   anamnese          Anamnese?
   address           Address?

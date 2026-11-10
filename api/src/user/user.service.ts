@@ -16,7 +16,13 @@ export class UserService {
 
     async create(data: ICreateUser): Promise<User>{
         try{
-            const user = await this.PrismaService.user.create({data});
+            const user = await this.PrismaService.user.create({
+                data: {
+                    email: data.email,
+                    password: data.password,
+                    role: data.role ?? "USER"
+                }
+            });
             return user;
         } catch(E: any){
             throw new InternalServerErrorException("Erro ao cadastrar usuário");
