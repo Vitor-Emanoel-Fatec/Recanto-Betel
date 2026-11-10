@@ -7,5 +7,6 @@ import { DatabaseModule } from '../database/database.module.js';
   imports: [DatabaseModule],
   controllers: [ParentController],
   providers: [ParentService],
+  exports: [ParentService]
 })
 export class ParentModule {}
