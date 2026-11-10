@@ -3,13 +3,17 @@ import {
   Post,
   Put,
   Delete,
+  Patch,
   Body,
   Res,
   Param,
   HttpCode,
-  HttpStatus
+  HttpStatus,
+  UseGuards
 } from '@nestjs/common';
 import { BeneficiaryService } from './beneficiary.service.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { RolesGuard } from '../auth/roles.guard.js';
 
 import type { Response } from "express";
 import type { ICreateBeneficiary } from './dto/beneficiary-create.dto.js';
@@ -41,6 +45,24 @@ export class BeneficiaryController {
     response.json(result);
   }
   
+  @Patch(":id/approve")
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @HttpCode(HttpStatus.OK)
+  async approveBeneficiary(@Param("id") id: string, @Res() response: Response): Promise<void> {
+    await this.beneficiaryService.approveBeneficiary(id);
+    response.json({ message: 'Matrícula aprovada' });
+  }
+
+  @Patch(":id/reject")
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
+  @HttpCode(HttpStatus.OK)
+  async rejectBeneficiary(@Param("id") id: string, @Res() response: Response): Promise<void> {
+    await this.beneficiaryService.rejectBeneficiary(id);
+    response.json({ message: 'Matrícula recusada' });
+  }
+
   @Delete(":id")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteBeneficiary(@Param("id") id: string, @Res() response: Response): Promise<void> {
