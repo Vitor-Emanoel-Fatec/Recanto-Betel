@@ -66,11 +66,11 @@ export const Footer: React.FC<FooterProps> = ({ onOpenSupportModal }) => {
                   Impacto
                 </button>
               </li>
-              <li>
+              {/* <li>
                 <button type="button" onClick={() => scrollTo('transparencia')}>
                   Transparência
                 </button>
-              </li>
+              </li> */}
               <li>
                 <button type="button" onClick={() => scrollTo('noticias')}>
                   Notícias

@@ -40,9 +40,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSupportModal }) => {
     { label: 'Início', href: '#inicio', id: 'inicio' },
     { label: 'Nossa História', href: '#historia', id: 'historia' },
     { label: 'Serviços', href: '#servicos', id: 'servicos' },
-    { label: 'Projetos', href: '#projetos', id: 'projetos' },
+    // { label: 'Projetos', href: '#projetos', id: 'projetos' },
     { label: 'Impacto', href: '#impacto', id: 'impacto' },
-    { label: 'Transparência', href: '#transparencia', id: 'transparencia' },
+    // { label: 'Transparência', href: '#transparencia', id: 'transparencia' },
     { label: 'Notícias', href: '#noticias', id: 'noticias' },
     { label: 'Contato', href: '#contato', id: 'contato' },
   ];

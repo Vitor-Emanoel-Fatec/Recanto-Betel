@@ -11,6 +11,7 @@ import { PrismaService } from '../database/prisma.service.js';
 import { ICreateUser } from './dto/user-create.dto.js';
 import { IFindUser } from "./dto/user-findUser.dto.js";
 import { IUpdateUser } from './dto/user-update.dto.js';
+import { TERMS_VERSION } from '../auth/terms.js';
 
 export interface PublicUser {
     id: string;
@@ -41,6 +42,9 @@ export class UserService {
                     email: data.email,
                     password: await argon2.hash(data.password, { type: argon2.argon2id }),
                     role: forceUserRole ? 'USER' : data.role ?? 'USER',
+                    ...(forceUserRole && data.termsAccepted === true
+                        ? { termsAcceptedVersion: TERMS_VERSION, termsAcceptedAt: new Date() }
+                        : {}),
                 },
                 select: publicUserSelect,
             });

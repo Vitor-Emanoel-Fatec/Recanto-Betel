@@ -70,7 +70,7 @@ describe('Authentication HTTP flow (e2e)', () => {
 
     await request(app.getHttpServer())
       .post('/api/auth/signup')
-      .send({ email, password, role: 'ADMIN' })
+      .send({ email, password, role: 'ADMIN', termsAccepted: true })
       .expect(201)
       .expect({ id: 'auth-e2e-user', email, role: 'USER' });
 

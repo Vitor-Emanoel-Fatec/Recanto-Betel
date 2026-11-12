@@ -103,7 +103,7 @@ export const Contact: React.FC<ContactProps> = ({ onShowToast }) => {
                 </div>
               </div>
 
-              {/* Telefone e WhatsApp */}
+              {/* Telefone e WhatsApp
               <div className={styles.detailItem}>
                 <div className={styles.iconCircle}>
                   <Phone size={20} />
@@ -112,7 +112,7 @@ export const Contact: React.FC<ContactProps> = ({ onShowToast }) => {
                   <strong>Telefone & WhatsApp</strong>
                   <span>{CONTACT_INFO.phone} · {CONTACT_INFO.whatsapp}</span>
                 </div>
-              </div>
+              </div> */}
 
               {/* E-mail */}
               <div className={styles.detailItem}>
@@ -150,7 +150,7 @@ export const Contact: React.FC<ContactProps> = ({ onShowToast }) => {
                 >
                   <InstagramIcon size={20} />
                 </a>
-                <a
+                {/* <a
                   href={CONTACT_INFO.social.youtube}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -158,8 +158,8 @@ export const Contact: React.FC<ContactProps> = ({ onShowToast }) => {
                   aria-label="YouTube do Recanto Betel"
                 >
                   <YoutubeIcon size={20} />
-                </a>
-                <a
+                </a> */}
+                {/* <a
                   href={`https://wa.me/5515998765432?text=Olá,%20gostaria%20de%20informações%20sobre%20a%20Associação%20Recanto%20Betel`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -167,7 +167,7 @@ export const Contact: React.FC<ContactProps> = ({ onShowToast }) => {
                   aria-label="WhatsApp do Recanto Betel"
                 >
                   <WhatsAppIcon size={20} />
-                </a>
+                </a> */}
               </div>
             </div>
 

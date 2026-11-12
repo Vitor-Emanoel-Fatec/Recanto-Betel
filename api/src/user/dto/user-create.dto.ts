@@ -1,4 +1,4 @@
-import { IsEmail, IsIn, IsOptional, IsString, MinLength, MaxLength } from 'class-validator';
+import { Equals, IsBoolean, IsEmail, IsIn, IsOptional, IsString, MinLength, MaxLength } from 'class-validator';
 
 export class ICreateUser {
   @IsEmail()
@@ -13,4 +13,9 @@ export class ICreateUser {
   @IsOptional()
   @IsIn(['USER', 'PARENT', 'ADMIN'])
   role?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  @Equals(true)
+  termsAccepted?: boolean;
 }

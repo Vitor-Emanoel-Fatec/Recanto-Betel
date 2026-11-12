@@ -15,6 +15,7 @@ import { JwtAuthGuard } from './jwt-auth.guard.js';
 import type { AuthenticatedRequest } from './authenticated-user.js';
 import { ICreateUser } from '../user/dto/user-create.dto.js';
 import { IFindCredentials } from '../user/dto/user-findCredentials.dto.js';
+import { TERMS_CONTENT, TERMS_VERSION } from './terms.js';
 
 const COOKIE_NAME = 'recanto_access';
 const COOKIE_MAX_AGE = 15 * 60 * 1000;
@@ -32,6 +33,11 @@ function cookieOptions() {
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Get('terms')
+  terms() {
+    return { version: TERMS_VERSION, content: TERMS_CONTENT };
+  }
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)

@@ -3,5 +3,5 @@ export interface ICreateRelativies {
     name: string,
     birthday: Date | string,
     salary: number,
-    relation: number
+    relation: string
 }

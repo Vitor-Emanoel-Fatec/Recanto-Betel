@@ -5,34 +5,38 @@ import {
 } from 'lucide-react';
 import styles from './PortalApp.module.scss';
 import {
-  type Beneficiary, type Enrollment, type EnrollmentEvent, type EnrollmentStatus, type FichaKind, type FichaSubmission,
+  type Beneficiary, type Enrollment, type EnrollmentEvent, type EnrollmentStatus, type FichaKind,
 } from './portalData';
 import { FichaPage, FichasHub, isFichaKind } from './PortalForms';
 import { useAuth } from '../services/AuthContext';
+import { getRegistrationTerms, type RegistrationTerms } from '../services/authService';
 import {
+  createAnamnese,
   decideEnrollment,
-  findAnamnese,
+  getMyEnrollment,
   listEnrollments,
   listMyEnrollments,
+  saveEnrollmentForm,
   submitEnrollment as submitEnrollmentRequest,
   updateAnamnese,
+  updateEnrollment,
   type EnrollmentRecord,
   type EnrollmentSubmission,
   type EnrollmentStatus as ApiEnrollmentStatus,
 } from '../services/enrollmentService';
 
 type Area = 'portal' | 'admin';
-type PageKey = 'home' | 'beneficiaries' | 'beneficiary-detail' | 'beneficiary-new' | 'enrollments' | 'enrollment-new' | 'enrollment-detail' | 'tracking' | 'responsibles' | 'reports' | 'forms' | 'form';
+type PageKey = 'home' | 'beneficiaries' | 'beneficiary-detail' | 'beneficiary-new' | 'enrollments' | 'enrollment-new' | 'enrollment-edit' | 'enrollment-detail' | 'tracking' | 'responsibles' | 'reports' | 'forms' | 'form';
 type Action = 'Aprovar' | 'Recusar' | 'Encaminhar para revisão';
 type PortalEnrollment = Enrollment & { parentId: string; parentEmail: string; parentContact: string };
 const enrollmentStatuses: EnrollmentStatus[] = ['Em análise', 'Aprovada', 'Recusada'];
 const PAGE_LABELS: Record<PageKey, string> = {
   home: 'Visão geral', beneficiaries: 'Beneficiários', 'beneficiary-detail': 'Detalhes do beneficiário', 'beneficiary-new': 'Novo beneficiário',
-  enrollments: 'Matrículas', 'enrollment-new': 'Nova solicitação',
+  enrollments: 'Matrículas', 'enrollment-new': 'Nova solicitação', 'enrollment-edit': 'Editar matrícula',
   'enrollment-detail': 'Acompanhamento', tracking: 'Acompanhamento institucional', responsibles: 'Responsáveis', reports: 'Relatórios',
   forms: 'Fichas', form: 'Preencher ficha',
 };
-function routeInfo(path: string): { area: Area; page: PageKey; id?: string } {
+function routeInfo(path: string): { area: Area; page: PageKey; id?: string; formKind?: string } {
   const area: Area = path.startsWith('/admin') ? 'admin' : 'portal';
   const segments = path.split('/').filter(Boolean);
   if (segments.length === 1) return { area, page: 'home' };
@@ -40,12 +44,16 @@ function routeInfo(path: string): { area: Area; page: PageKey; id?: string } {
   if (segments[1] === 'beneficiarios' && segments[2]) return { area, page: 'beneficiary-detail', id: segments[2] };
   if (segments[1] === 'beneficiarios') return { area, page: 'beneficiaries' };
   if (segments[1] === 'matriculas' && segments[2] === 'nova') return { area, page: 'enrollment-new' };
+  if (segments[1] === 'matriculas' && segments[2] && segments[3] === 'editar') return { area, page: 'enrollment-edit', id: segments[2] };
+  if (segments[1] === 'matriculas' && segments[2] && segments[3] === 'fichas' && segments[4]) {
+    return { area, page: 'form', id: segments[2], formKind: segments[4] };
+  }
   if (segments[1] === 'matriculas' && segments[2]) return { area, page: 'enrollment-detail', id: segments[2] };
   if (segments[1] === 'matriculas') return { area, page: 'enrollments' };
   if (segments[1] === 'acompanhamento') return { area, page: 'tracking' };
   if (segments[1] === 'responsaveis') return { area, page: 'responsibles' };
   if (segments[1] === 'relatorios') return { area, page: 'reports' };
-  if (segments[1] === 'fichas' && segments[2]) return { area, page: 'form', id: segments[2] };
+  if (segments[1] === 'fichas' && segments[2]) return { area, page: 'form', formKind: segments[2] };
   if (segments[1] === 'fichas') return { area, page: 'forms' };
   return { area, page: 'home' };
 }
@@ -108,7 +116,6 @@ export function PortalApp() {
   const [loadError, setLoadError] = useState('');
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
   const [enrollments, setEnrollments] = useState<PortalEnrollment[]>([]);
-  const [submissions, setSubmissions] = useState<FichaSubmission[]>([]);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [toast, setToast] = useState('');
   const [query, setQuery] = useState('');
@@ -211,6 +218,7 @@ export function PortalApp() {
   const currentEnrollment = current.id ? enrollments.find((item) =>
     item.id === current.id,
   ) : undefined;
+  const currentRecord = current.id ? apiRecords.find((record) => record.id === current.id) : undefined;
   const currentBeneficiary = current.id ? beneficiaries.find((item) =>
     item.id === current.id && (isAdmin || item.parentId === user?.id),
   ) : undefined;
@@ -226,17 +234,31 @@ export function PortalApp() {
   const pagedEnrollments = filtered.slice((page - 1) * 5, page * 5);
   const showToast = (message: string) => setToast(message);
 
-  const submitFicha = async (kind: FichaKind, beneficiaryId: string, formData: FormData) => {
-    if (kind !== 'anamnese') {
-      showToast('Esta ficha ainda não possui um serviço de gravação na API.');
-      return;
-    }
+  const replaceEnrollmentRecord = (record: EnrollmentRecord) => {
+    setApiRecords((previous) => previous.some((item) => item.id === record.id)
+      ? previous.map((item) => item.id === record.id ? record : item)
+      : [record, ...previous]);
+    const mapped = toPortalEnrollment(record, fallbackParent);
+    setEnrollments((previous) => previous.some((item) => item.id === mapped.id)
+      ? previous.map((item) => item.id === mapped.id ? mapped : item)
+      : [mapped, ...previous]);
+    const beneficiary = toPortalBeneficiary(record, mapped.parentId);
+    setBeneficiaries((previous) => previous.some((item) => item.id === beneficiary.id)
+      ? previous.map((item) => item.id === beneficiary.id ? beneficiary : item)
+      : [beneficiary, ...previous]);
+  };
 
+  const submitFicha = async (
+    kind: FichaKind,
+    enrollmentId: string,
+    formData: FormData,
+    saveDraft: boolean,
+  ) => {
+    const text = (name: string) => String(formData.get(name) ?? '').trim();
     const yesNo = (name: string) => {
-      const value = String(formData.get(name) ?? '');
+      const value = text(name);
       return value === 'Sim' ? true : value === 'Não' ? false : undefined;
     };
-    const text = (name: string) => String(formData.get(name) ?? '').trim() || undefined;
     const fieldMap: Record<string, string> = {
       doenca: 'suffersFromDisease',
       tratamento: 'underMedicalTreatment',
@@ -246,54 +268,74 @@ export function PortalApp() {
       cicatrizacao: 'healingProblems',
       anestesia: 'anesthesiaProblems',
       hemorragia: 'hemorrhageProblems',
-      febreReumatica: 'rheumaticFever',
-      cardiacos: 'heartProblems',
-      renais: 'kidneyProblems',
-      gastricos: 'gastricProblems',
-      respiratorios: 'respiratoryProblems',
-      alergicos: 'allergicProblems',
-      articulares: 'jointRheumatismProblems',
-      diabetes: 'diabetes',
-      hipertensao: 'arterialHypertension',
+      'doencas_febreReumatica': 'rheumaticFever',
+      'doencas_cardiacos': 'heartProblems',
+      'doencas_renais': 'kidneyProblems',
+      'doencas_gastricos': 'gastricProblems',
+      'doencas_respiratorios': 'respiratoryProblems',
+      'doencas_alergicos': 'allergicProblems',
+      'doencas_articulares': 'jointRheumatismProblems',
+      'doencas_diabetes': 'diabetes',
+      'doencas_hipertensao': 'arterialHypertension',
     };
-    const payload: Record<string, unknown> = {
-      isComplete: true,
-      mainComplaintEvolution: text('queixaPrincipal') ?? '',
-      diseaseDescription: text('doencaDetalhe'),
-      medicationDescription: text('medicacaoDetalhe'),
-      attendingPhysicianName: text('medico'),
-      hasAllergies: yesNo('alergia'),
-      allergiesDescription: text('alergiaDetalhe'),
-      surgeriesDescription: text('operadoDetalhe'),
-      habits: text('habitos'),
-      familyHistory: text('antecedentesFamiliares'),
-      otherInformation: text('outrasInformacoes'),
-      isPregnant: yesNo('gravidez'),
-    };
-    for (const [formName, apiName] of Object.entries(fieldMap)) {
-      const value = yesNo(formName);
-      if (value !== undefined) payload[apiName] = value;
-    }
 
     try {
-      const record = await findAnamnese(beneficiaryId);
-      if (typeof record.id !== 'string') throw new Error('A API retornou uma ficha de anamnese inválida.');
-      const saved = await updateAnamnese(record.id, payload);
-      setSubmissions((previous) => [{
-        id: typeof saved.id === 'string' ? saved.id : record.id as string,
-        kind,
-        beneficiaryId,
-        submittedAt: new Date().toISOString().slice(0, 10),
-        data: {},
-      }, ...previous]);
-      showToast('Anamnese salva com sucesso.');
-      navigate('/portal/fichas');
+      let updated: EnrollmentRecord;
+      if (kind === 'anamnese') {
+        const payload: Record<string, unknown> = {
+          mainComplaintEvolution: text('queixaPrincipal'),
+          diseaseDescription: text('doencaDetalhe'),
+          medicationDescription: text('medicacaoDetalhe'),
+          attendingPhysicianName: text('medicoNome'),
+          attendingPhysicianPhone: text('medicoTelefone'),
+          allergiesDescription: text('alergiaDetalhe'),
+          surgeriesDescription: text('operadoDetalhe'),
+          habits: text('habitos'),
+          familyHistory: text('antecedentesFamiliares'),
+          otherInformation: text('outrasInformacoes'),
+          responsibleSignature: text('assinatura'),
+          declarationAccepted: formData.has('declaracao'),
+        };
+        const optionalPregnancy = yesNo('gravidez');
+        if (optionalPregnancy !== undefined) payload.isPregnant = optionalPregnancy;
+        for (const [formName, apiName] of Object.entries(fieldMap)) {
+          const value = yesNo(formName);
+          if (value !== undefined) payload[apiName] = value;
+        }
+
+        const record = apiRecords.find((item) => item.id === enrollmentId);
+        const anamneseId = record?.anamnese?.id;
+        if (typeof anamneseId === 'string') {
+          await updateAnamnese(anamneseId, payload);
+        } else if (record) {
+          await createAnamnese({
+            beneficiary_id: record.beneficiary.id,
+            enrollment_id: enrollmentId,
+            ...payload,
+          });
+        } else {
+          throw new Error('A matrícula não está carregada. Atualize a página e tente novamente.');
+        }
+        updated = await getMyEnrollment(enrollmentId);
+      } else if (kind === 'termo' || kind === 'autorizacao' || kind === 'relatos') {
+        const data: Record<string, string | boolean> = {};
+        for (const [key, value] of formData.entries()) {
+          if (typeof value === 'string') data[key] = value;
+        }
+        updated = await saveEnrollmentForm(enrollmentId, kind, data);
+      } else {
+        throw new Error('A ficha de matrícula deve ser editada pela solicitação correspondente.');
+      }
+
+      replaceEnrollmentRecord(updated);
+      showToast(saveDraft ? 'Rascunho salvo. Você poderá continuar depois.' : 'Ficha salva com sucesso.');
+      navigate(`/portal/matriculas/${enrollmentId}`);
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Não foi possível salvar a anamnese.');
+      showToast(error instanceof Error ? error.message : 'Não foi possível salvar a ficha.');
     }
   };
 
-  const submitEnrollment = async (event: FormEvent<HTMLFormElement>) => {
+  const submitEnrollment = async (event: FormEvent<HTMLFormElement>, enrollmentId?: string) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const value = (name: string) => String(formData.get(name) ?? '').trim();
@@ -304,60 +346,82 @@ export function PortalApp() {
       if (!Number.isFinite(parsed)) throw new Error(`Preencha o campo numérico ${name}.`);
       return parsed;
     };
-    const digits = (name: string) => value(name).replace(/\D/g, '');
-    const payload: EnrollmentSubmission = {
-      parent: {
-        name: value('parentName'),
-        cpf: digits('parentCpf'),
-        contact: value('parentContact'),
-        email: isAdmin ? value('parentEmail') : user?.email ?? '',
-        profession: value('parentProfession') || undefined,
-        educational_level: value('parentEducation') || undefined,
-        comertial_address: value('parentWorkAddress') || undefined,
-        salary: number('parentSalary', true),
-        relation_type: number('parentRelation') ?? 0,
-      },
-      beneficiary: {
-        name: value('beneficiaryName'),
-        birthday: value('birthday'),
-        rg: number('rg') ?? 0,
-        cpf: digits('cpf'),
-        school: value('school'),
-        period: value('period'),
-        religion: value('religion'),
-        story: value('story'),
-        address: {
-          streetAddress: value('streetAddress'),
-          house_number: number('houseNumber') ?? 0,
-          neighborhood: value('neighborhood'),
-          landmark: value('landmark') || undefined,
-          housingType: number('housingType') ?? 0,
-          housingCost: number('housingCost', true),
-          waterCost: number('waterCost', true),
-          powerCost: number('powerCost', true),
-          foodCost: number('foodCost', true),
-          gasCost: number('gasCost', true),
-        },
-        incomeAndBenefits: {
-          nis: value('nis') || undefined,
-          totalIncome: number('totalIncome') ?? 0,
-          perCapitaIncome: number('perCapitaIncome') ?? 0,
-          hasGovernmentBenefit: value('hasGovernmentBenefit') === 'true',
-          benefitName: value('benefitName') || undefined,
-          benefitValue: number('benefitValue', true),
-        },
-      },
-    };
     try {
-      const record = await submitEnrollmentRequest(payload);
-      setApiRecords((previous) => [record, ...previous]);
-      const mappedEnrollment = toPortalEnrollment(record, fallbackParent);
-      setEnrollments((previous) => [mappedEnrollment, ...previous]);
-      setBeneficiaries((previous) => [toPortalBeneficiary(record, mappedEnrollment.parentId), ...previous]);
-      setNewEnrollmentId(record.id);
-      if (!isAdmin) await refresh();
+      const digits = (name: string) => value(name).replace(/\D/g, '');
+      const relatives: NonNullable<EnrollmentSubmission['beneficiary']['relatives']> = [];
+      const relativeCount = number('relativeCount') ?? 1;
+      for (let index = 0; index < relativeCount; index += 1) {
+        const name = value(`relativeName${index}`);
+        const birthday = value(`relativeBirthday${index}`);
+        const relation = value(`relativeRelation${index}`);
+        const salary = value(`relativeSalary${index}`);
+        if (![name, birthday, relation, salary].some(Boolean)) continue;
+        if (![name, birthday, relation, salary].every(Boolean)) {
+          throw new Error(`Preencha todos os dados do familiar ${index + 1} ou remova a linha.`);
+        }
+        relatives.push({
+          name,
+          birthday,
+          relation,
+          salary: number(`relativeSalary${index}`) ?? 0,
+        });
+      }
+      if (!formData.has('termsAccepted')) {
+        throw new Error('Aceite os termos para concluir o cadastro da matrícula.');
+      }
+      const payload: EnrollmentSubmission = {
+        termsAccepted: true,
+        parent: {
+          name: value('parentName'),
+          cpf: digits('parentCpf'),
+          contact: value('parentContact'),
+          email: isAdmin ? value('parentEmail') : user?.email ?? '',
+          profession: value('parentProfession') || undefined,
+          educational_level: value('parentEducation') || undefined,
+          comertial_address: value('parentWorkAddress') || undefined,
+          salary: number('parentSalary', true),
+          relation_type: value('parentRelation'),
+        },
+        beneficiary: {
+          name: value('beneficiaryName'),
+          birthday: value('birthday'),
+          rg: number('rg') ?? 0,
+          cpf: digits('cpf'),
+          school: value('school'),
+          period: value('period'),
+          religion: value('religion'),
+          story: value('story'),
+          address: {
+            streetAddress: value('streetAddress'),
+            house_number: number('houseNumber') ?? 0,
+            neighborhood: value('neighborhood'),
+            landmark: value('landmark') || undefined,
+            housingType: number('housingType') ?? 0,
+            housingCost: number('housingCost', true),
+            waterCost: number('waterCost', true),
+            powerCost: number('powerCost', true),
+            foodCost: number('foodCost', true),
+            gasCost: number('gasCost', true),
+          },
+          incomeAndBenefits: {
+            nis: value('nis') || undefined,
+            totalIncome: number('totalIncome') ?? 0,
+            perCapitaIncome: number('perCapitaIncome') ?? 0,
+            hasGovernmentBenefit: value('hasGovernmentBenefit') === 'true',
+            benefitName: value('benefitName') || undefined,
+            benefitValue: number('benefitValue', true),
+          },
+          relatives,
+        },
+      };
+      const record = enrollmentId
+        ? await updateEnrollment(enrollmentId, payload)
+        : await submitEnrollmentRequest(payload);
+      replaceEnrollmentRecord(record);
+      if (!enrollmentId) setNewEnrollmentId(record.id);
+      if (!isAdmin && !enrollmentId) await refresh();
       navigate(`${isAdmin ? '/admin' : '/portal'}/matriculas/${record.id}`);
-      showToast(isAdmin ? 'Matrícula registrada para análise.' : 'Solicitação enviada para análise.');
+      showToast(enrollmentId ? 'Matrícula atualizada.' : isAdmin ? 'Matrícula registrada para análise.' : 'Solicitação enviada para análise.');
     } catch (error) {
       showToast(error instanceof Error ? error.message : 'Não foi possível enviar a solicitação.');
     }
@@ -414,6 +478,37 @@ export function PortalApp() {
     );
   }
 
+  const basePath = isAdmin ? '/admin' : '/portal';
+  const category = current.page === 'enrollment-detail' || current.page === 'enrollment-edit' || current.page === 'enrollment-new' || current.formKind
+    ? 'Matrículas'
+    : current.page === 'beneficiary-detail' || current.page === 'beneficiary-new'
+      ? 'Beneficiários'
+      : current.page === 'forms' || current.page === 'form'
+        ? 'Fichas'
+        : '';
+  const categoryPath = category === 'Matrículas'
+    ? `${basePath}/matriculas`
+    : category === 'Beneficiários'
+      ? `${basePath}/beneficiarios`
+      : `${basePath}/fichas`;
+  const currentLabel = current.formKind
+    ? `Ficha: ${current.formKind}`
+    : current.page === 'tracking' && !isAdmin
+      ? 'Acompanhamento'
+      : PAGE_LABELS[current.page];
+  const breadcrumbItems: Array<{ label: string; to?: string }> = [
+    { label: 'Recanto Betel', to: '/' },
+    { label: isAdmin ? 'Admin' : 'Responsável', to: basePath },
+  ];
+  if (category) breadcrumbItems.push({ label: category, to: categoryPath });
+  if (current.id && ['enrollment-detail', 'enrollment-edit', 'form'].includes(current.page)) {
+    breadcrumbItems.push({
+      label: currentRecord?.beneficiary.name ?? current.id,
+      to: `${basePath}/matriculas/${current.id}`,
+    });
+  }
+  breadcrumbItems.push({ label: currentLabel });
+
   return (
     <div className={styles.app}>
       <a className={styles.skipLink} href="#portal-content">Pular para o conteúdo</a>
@@ -462,7 +557,16 @@ export function PortalApp() {
       </header>
 
       <main id="portal-content" className={styles.main}>
-        <div className={styles.breadcrumb}><span>Recanto Betel</span><span aria-hidden="true">/</span><span>{current.area === 'admin' ? 'Admin' : 'Parent'}</span><span aria-hidden="true">/</span><strong>{current.page === 'tracking' && current.area === 'portal' ? 'Acompanhamento' : PAGE_LABELS[current.page]}</strong></div>
+        <nav className={styles.breadcrumb} aria-label="Navegação estrutural">
+          {breadcrumbItems.map((item, index) => (
+            <span className={styles.breadcrumbItem} key={`${item.label}-${index}`}>
+              {index > 0 && <span aria-hidden="true">/</span>}
+              {item.to && index !== breadcrumbItems.length - 1
+                ? link(item.to, item.label)
+                : <strong aria-current="page">{item.label}</strong>}
+            </span>
+          ))}
+        </nav>
         {loadError
           ? <div className={styles.demoNotice} role="alert"><Bell size={16} /><span>{loadError}</span><button type="button" className={styles.smallAction} onClick={() => window.location.reload()}>Tentar novamente</button></div>
           : isLoading
@@ -474,13 +578,12 @@ export function PortalApp() {
         {current.page === 'beneficiary-detail' && <BeneficiaryDetail beneficiary={currentBeneficiary} enrollments={enrollments} area={current.area} navigate={navigate} />}
         {current.page === 'beneficiary-new' && <BeneficiaryForm onCancel={() => navigate('/portal/beneficiarios')} navigate={navigate} />}
         {current.page === 'enrollments' && <EnrollmentList area={current.area} enrollments={pagedEnrollments} filteredCount={filtered.length} page={page} maxPage={Math.max(1, Math.ceil(filtered.length / 5))} query={query} statusFilter={statusFilter} setQuery={setQuery} setStatusFilter={setStatusFilter} setSortNewest={setSortNewest} sortNewest={sortNewest} setPage={setPage} link={link} relatedBeneficiary={relatedBeneficiary} onAction={(enrollmentId, action) => { setReason(''); setPendingAction({ enrollmentId, action }); }} />}
-        {current.page === 'enrollment-new' && <EnrollmentForm area={current.area} onSubmit={submitEnrollment} onCancel={() => navigate(`${current.area === 'admin' ? '/admin' : '/portal'}/matriculas`)} />}
+        {current.page === 'enrollment-new' && <EnrollmentForm area={current.area} onSubmit={(event) => void submitEnrollment(event)} onCancel={() => navigate(`${basePath}/matriculas`)} />}
+        {current.page === 'enrollment-edit' && !isLoading && !loadError && <EnrollmentForm area={current.area} record={currentRecord} onSubmit={(event) => void submitEnrollment(event, current.id)} onCancel={() => navigate(`${basePath}/matriculas/${current.id}`)} />}
         {current.page === 'enrollment-detail' && <EnrollmentDetail enrollment={currentEnrollment} beneficiary={currentEnrollment ? relatedBeneficiary(currentEnrollment.beneficiaryId) : undefined} area={current.area} newEnrollment={currentEnrollment?.id === newEnrollmentId} record={apiRecords.find((record) => record.id === currentEnrollment?.id)} onAction={(enrollmentId, action) => { setReason(''); setPendingAction({ enrollmentId, action }); }} link={link} />}
         {current.page === 'tracking' && <TrackingPage area={current.area} beneficiaries={beneficiaries} enrollments={visibleEnrollments} navigate={navigate} />}
-        {current.area === 'portal' && current.page === 'forms' && <FichasHub submissions={submissions} beneficiaries={beneficiaries.filter((item) => item.parentId === user.id)} navigate={navigate} />}
-        {current.area === 'portal' && current.page === 'form' && (isFichaKind(current.id)
-          ? <FichaPage kind={current.id} beneficiaries={beneficiaries.filter((item) => item.parentId === user.id)} onSubmit={submitFicha} navigate={navigate} />
-          : <EmptyState title="Ficha não encontrada" description="Escolha uma das fichas disponíveis." action={<button className={styles.buttonSecondary} onClick={() => navigate('/portal/fichas')}>Voltar para fichas</button>} />)}
+        {current.area === 'portal' && current.page === 'forms' && <FichasHub enrollments={apiRecords} navigate={navigate} />}
+        {current.area === 'portal' && current.page === 'form' && <FichaPage kind={isFichaKind(current.formKind) ? current.formKind : undefined} enrollment={currentRecord} onSubmit={submitFicha} navigate={navigate} />}
         {current.page === 'responsibles' && <Responsibles beneficiaries={beneficiaries} enrollments={enrollments} />}
         {current.page === 'reports' && <Reports enrollments={enrollments} />}
       </main>
@@ -594,73 +697,148 @@ function BeneficiaryForm({ onCancel, navigate }: { onCancel: () => void; navigat
   </>;
 }
 
-function EnrollmentForm({ area, onSubmit, onCancel }: { area: Area; onSubmit: (event: FormEvent<HTMLFormElement>) => void; onCancel: () => void }) {
+function EnrollmentForm({ area, record, onSubmit, onCancel }: {
+  area: Area;
+  record?: EnrollmentRecord;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onCancel: () => void;
+}) {
   const isAdmin = area === 'admin';
+  const [terms, setTerms] = useState<RegistrationTerms | null>(null);
+  const [termsError, setTermsError] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [familyCount, setFamilyCount] = useState(Math.max(1, record?.beneficiary.relativies?.length ?? 0));
+  const beneficiary = record?.beneficiary;
+  const parent = record?.parent;
+  const address = beneficiary?.address;
+  const income = beneficiary?.incomeAndBenefits;
+  const relation = beneficiary?.parent?.find((item) => item.parent_id === parent?.id)?.relationshipType ?? '';
+  const value = (source: Record<string, unknown> | null | undefined, key: string): string => {
+    const item = source?.[key];
+    return typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean'
+      ? String(item)
+      : '';
+  };
+
+  useEffect(() => {
+    setFamilyCount(Math.max(1, record?.beneficiary.relativies?.length ?? 0));
+  }, [record?.id, record?.beneficiary.relativies?.length]);
+
+  useEffect(() => {
+    let active = true;
+    getRegistrationTerms()
+      .then((result) => {
+        if (active) {
+          setTerms(result);
+          setTermsAccepted(Boolean(
+            record &&
+            record.termsAcceptedVersion === result.version &&
+            record.termsAcceptedAt,
+          ));
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) setTermsError(error instanceof Error ? error.message : 'Não foi possível carregar os termos.');
+      });
+    return () => { active = false; };
+  }, [record]);
+
+  if (record === undefined && window.location.pathname.includes('/editar')) {
+    return <EmptyState title="Matrícula não encontrada" description="Não foi possível carregar os dados para edição." action={<button className={styles.buttonSecondary} type="button" onClick={onCancel}>Voltar</button>} />;
+  }
+
   return <>
-    <PageTitle eyebrow={isAdmin ? 'Administração' : 'Área do responsável'} title={isAdmin ? 'Registrar matrícula' : 'Solicitar matrícula'} description={isAdmin ? 'Registre os dados de uma matrícula, inclusive de formulários recebidos fisicamente.' : 'Preencha as informações para encaminhar a solicitação à equipe.'} />
+    <PageTitle eyebrow={isAdmin ? 'Administração' : 'Área do responsável'} title={record ? 'Editar matrícula' : isAdmin ? 'Registrar matrícula' : 'Solicitar matrícula'} description={record ? 'Os dados persistidos estão carregados. Salve para atualizar os mesmos registros vinculados.' : isAdmin ? 'Registre os dados de uma matrícula, inclusive de formulários recebidos fisicamente.' : 'Preencha os dados cadastrais para iniciar a solicitação.'} />
     <form className={styles.panelForm} onSubmit={onSubmit}>
       <div className={styles.formSection}>
         <h2>Criança</h2>
-        <p>Dados pessoais e escolares do beneficiário.</p>
+        <p>Dados cadastrais e escolares do beneficiário. Informações médicas são preenchidas exclusivamente na anamnese.</p>
         <div className={styles.formGrid}>
-          <label className={`${styles.field} ${styles.fieldWide}`}>Nome completo<input name="beneficiaryName" required maxLength={191} autoComplete="name" /></label>
-          <label className={styles.field}>Data de nascimento<input name="birthday" type="date" required max={new Date().toISOString().slice(0, 10)} /></label>
-          <label className={styles.field}>RG (somente números)<input name="rg" type="number" min="0" max="2147483647" required /></label>
-          <label className={styles.field}>CPF (11 dígitos)<input name="cpf" inputMode="numeric" minLength={11} maxLength={11} pattern="[0-9]{11}" required /></label>
-          <label className={styles.field}>Escola<input name="school" required maxLength={191} /></label>
-          <label className={styles.field}>Período<input name="period" required maxLength={191} /></label>
-          <label className={styles.field}>Religião<input name="religion" required maxLength={191} /></label>
-          <label className={`${styles.field} ${styles.fieldWide}`}>Histórico / informações relevantes<textarea name="story" rows={3} maxLength={10000} /></label>
+          <label className={`${styles.field} ${styles.fieldWide}`}>Nome completo<input name="beneficiaryName" required maxLength={191} autoComplete="name" defaultValue={beneficiary?.name} /></label>
+          <label className={styles.field}>Data de nascimento<input name="birthday" type="date" required max={new Date().toISOString().slice(0, 10)} defaultValue={beneficiary?.birthday.slice(0, 10)} /></label>
+          <label className={styles.field}>RG (somente números)<input name="rg" type="number" min="0" max="2147483647" required defaultValue={beneficiary?.rg} /></label>
+          <label className={styles.field}>CPF (11 dígitos)<input name="cpf" inputMode="numeric" minLength={11} maxLength={11} pattern="[0-9]{11}" required defaultValue={beneficiary?.cpf} /></label>
+          <label className={styles.field}>Escola<input name="school" required maxLength={191} defaultValue={beneficiary?.school} /></label>
+          <label className={styles.field}>Período<input name="period" required maxLength={191} defaultValue={beneficiary?.period} /></label>
+          <label className={styles.field}>Religião<input name="religion" required maxLength={191} defaultValue={beneficiary?.religion} /></label>
+          <label className={`${styles.field} ${styles.fieldWide}`}>Histórico / informações cadastrais<textarea name="story" rows={3} maxLength={10000} defaultValue={beneficiary?.story} /></label>
         </div>
       </div>
       <div className={styles.formSection}>
         <h2>Responsável legal</h2>
         <p>{isAdmin ? 'Informe os dados do responsável conforme o formulário recebido. Não é necessário que ele tenha uma conta no portal.' : 'O e-mail será associado à conta autenticada.'}</p>
         <div className={styles.formGrid}>
-          <label className={styles.field}>Nome completo<input name="parentName" required minLength={2} maxLength={191} autoComplete="name" /></label>
-          <label className={styles.field}>CPF (11 dígitos)<input name="parentCpf" inputMode="numeric" minLength={11} maxLength={11} pattern="[0-9]{11}" required /></label>
-          <label className={styles.field}>Telefone<input name="parentContact" type="tel" required minLength={8} maxLength={191} autoComplete="tel" /></label>
-          {isAdmin && <label className={styles.field}>E-mail do responsável<input name="parentEmail" type="email" required maxLength={191} autoComplete="email" /></label>}
-          <label className={styles.field}>Vínculo com a criança<select name="parentRelation" required defaultValue=""><option value="" disabled>Selecione</option><option value="1">Pai</option><option value="2">Mãe</option><option value="3">Responsável legal</option></select></label>
-          <label className={styles.field}>Profissão<input name="parentProfession" maxLength={191} /></label>
-          <label className={styles.field}>Escolaridade<input name="parentEducation" maxLength={191} /></label>
-          <label className={styles.field}>Renda mensal (R$)<input name="parentSalary" type="number" min="0" step="0.01" /></label>
-          <label className={styles.field}>Endereço comercial<input name="parentWorkAddress" maxLength={191} /></label>
+          <label className={styles.field}>Nome completo<input name="parentName" required minLength={2} maxLength={191} autoComplete="name" defaultValue={parent?.name} /></label>
+          <label className={styles.field}>CPF (11 dígitos)<input name="parentCpf" inputMode="numeric" minLength={11} maxLength={11} pattern="[0-9]{11}" required defaultValue={parent?.cpf} /></label>
+          <label className={styles.field}>Telefone<input name="parentContact" type="tel" required minLength={8} maxLength={191} autoComplete="tel" defaultValue={parent?.contact} /></label>
+          {isAdmin && <label className={styles.field}>E-mail do responsável<input name="parentEmail" type="email" required maxLength={191} autoComplete="email" defaultValue={parent?.email} /></label>}
+          <label className={styles.field}>Vínculo com a criança<input name="parentRelation" required minLength={2} maxLength={191} defaultValue={relation} placeholder="Ex.: mãe, avó, tutor legal" /></label>
+          <label className={styles.field}>Profissão<input name="parentProfession" maxLength={191} defaultValue={value(parent ?? null, 'profession')} /></label>
+          <label className={styles.field}>Escolaridade<input name="parentEducation" maxLength={191} defaultValue={value(parent ?? null, 'educational_level')} /></label>
+          <label className={styles.field}>Renda mensal (R$)<input name="parentSalary" type="number" min="0" step="0.01" defaultValue={value(parent ?? null, 'salary')} /></label>
+          <label className={styles.field}>Endereço comercial<input name="parentWorkAddress" maxLength={191} defaultValue={value(parent ?? null, 'comertial_address')} /></label>
         </div>
       </div>
       <div className={styles.formSection}>
         <h2>Endereço familiar</h2>
         <div className={styles.formGrid}>
-          <label className={`${styles.field} ${styles.fieldWide}`}>Rua / logradouro<input name="streetAddress" required minLength={2} maxLength={191} autoComplete="street-address" /></label>
-          <label className={styles.field}>Número<input name="houseNumber" type="number" min="0" required /></label>
-          <label className={styles.field}>Bairro<input name="neighborhood" required minLength={2} maxLength={191} /></label>
-          <label className={styles.field}>Ponto de referência<input name="landmark" maxLength={191} /></label>
-          <label className={styles.field}>Moradia<select name="housingType" required defaultValue=""><option value="" disabled>Selecione</option><option value="1">Própria</option><option value="2">Cedida</option><option value="3">Alugada</option></select></label>
-          <label className={styles.field}>Custo de moradia / aluguel (R$)<input name="housingCost" type="number" min="0" step="0.01" /></label>
-          <label className={styles.field}>Água (R$)<input name="waterCost" type="number" min="0" step="0.01" /></label>
-          <label className={styles.field}>Energia (R$)<input name="powerCost" type="number" min="0" step="0.01" /></label>
-          <label className={styles.field}>Alimentação (R$)<input name="foodCost" type="number" min="0" step="0.01" /></label>
-          <label className={styles.field}>Gás (R$)<input name="gasCost" type="number" min="0" step="0.01" /></label>
+          <label className={`${styles.field} ${styles.fieldWide}`}>Rua / logradouro<input name="streetAddress" required minLength={2} maxLength={191} autoComplete="street-address" defaultValue={value(address ?? null, 'streetAddress')} /></label>
+          <label className={styles.field}>Número<input name="houseNumber" type="number" min="0" required defaultValue={value(address ?? null, 'house_number')} /></label>
+          <label className={styles.field}>Bairro<input name="neighborhood" required minLength={2} maxLength={191} defaultValue={value(address ?? null, 'neighborhood')} /></label>
+          <label className={styles.field}>Ponto de referência<input name="landmark" maxLength={191} defaultValue={value(address ?? null, 'landmark')} /></label>
+          <label className={styles.field}>Moradia<select name="housingType" required defaultValue={value(address ?? null, 'housingType')}><option value="" disabled>Selecione</option><option value="1">Própria</option><option value="2">Cedida</option><option value="3">Alugada</option></select></label>
+          <label className={styles.field}>Custo de moradia / aluguel (R$)<input name="housingCost" type="number" min="0" step="0.01" defaultValue={value(address ?? null, 'housingCost')} /></label>
+          <label className={styles.field}>Água (R$)<input name="waterCost" type="number" min="0" step="0.01" defaultValue={value(address ?? null, 'waterCost')} /></label>
+          <label className={styles.field}>Energia (R$)<input name="powerCost" type="number" min="0" step="0.01" defaultValue={value(address ?? null, 'powerCost')} /></label>
+          <label className={styles.field}>Alimentação (R$)<input name="foodCost" type="number" min="0" step="0.01" defaultValue={value(address ?? null, 'foodCost')} /></label>
+          <label className={styles.field}>Gás (R$)<input name="gasCost" type="number" min="0" step="0.01" defaultValue={value(address ?? null, 'gasCost')} /></label>
         </div>
       </div>
       <div className={styles.formSection}>
         <h2>Renda e benefícios</h2>
         <div className={styles.formGrid}>
-          <label className={styles.field}>NIS<input name="nis" maxLength={191} /></label>
-          <label className={styles.field}>Renda familiar total (R$)<input name="totalIncome" type="number" min="0" step="0.01" required /></label>
-          <label className={styles.field}>Renda per capita (R$)<input name="perCapitaIncome" type="number" min="0" step="0.01" required /></label>
-          <label className={styles.field}>Recebe benefício?<select name="hasGovernmentBenefit" required defaultValue=""><option value="" disabled>Selecione</option><option value="true">Sim</option><option value="false">Não</option></select></label>
-          <label className={styles.field}>Benefício informado<input name="benefitName" maxLength={191} /></label>
-          <label className={styles.field}>Valor mensal (R$)<input name="benefitValue" type="number" min="0" step="0.01" /></label>
+          <label className={styles.field}>NIS<input name="nis" maxLength={191} defaultValue={value(income ?? null, 'nis')} /></label>
+          <label className={styles.field}>Renda familiar total (R$)<input name="totalIncome" type="number" min="0" step="0.01" required defaultValue={value(income ?? null, 'totalIncome')} /></label>
+          <label className={styles.field}>Renda per capita (R$)<input name="perCapitaIncome" type="number" min="0" step="0.01" required defaultValue={value(income ?? null, 'perCapitaIncome')} /></label>
+          <label className={styles.field}>Recebe benefício?<select name="hasGovernmentBenefit" required defaultValue={value(income ?? null, 'hasGovernmentBenefit')}><option value="" disabled>Selecione</option><option value="true">Sim</option><option value="false">Não</option></select></label>
+          <label className={styles.field}>Benefício informado<input name="benefitName" maxLength={191} defaultValue={value(income ?? null, 'benefitName')} /></label>
+          <label className={styles.field}>Valor mensal (R$)<input name="benefitValue" type="number" min="0" step="0.01" defaultValue={value(income ?? null, 'benefitValue')} /></label>
         </div>
       </div>
       <div className={styles.formSection}>
-        <h2>Solicitação</h2>
-        <p>A equipe analisará os dados. O envio não confirma ingresso institucional.</p>
+        <h2>Composição familiar</h2>
+        <p>Adicione somente quem mora com o beneficiário. Deixe a linha vazia se não houver outros membros.</p>
+        <input type="hidden" name="relativeCount" value={familyCount} />
+        {Array.from({ length: familyCount }, (_, index) => {
+          const member = beneficiary?.relativies?.[index];
+          return <fieldset key={index} className={styles.repeatRow}>
+            <legend>Familiar {index + 1}</legend>
+            <label className={styles.field}>Nome<input name={`relativeName${index}`} maxLength={191} defaultValue={value(member ?? null, 'name')} /></label>
+            <label className={styles.field}>Nascimento<input name={`relativeBirthday${index}`} type="date" max={new Date().toISOString().slice(0, 10)} defaultValue={value(member ?? null, 'birthday').slice(0, 10)} /></label>
+            <label className={styles.field}>Parentesco<input name={`relativeRelation${index}`} maxLength={191} defaultValue={value(member ?? null, 'relation')} /></label>
+            <label className={styles.field}>Renda (R$)<input name={`relativeSalary${index}`} type="number" min="0" step="0.01" defaultValue={value(member ?? null, 'salary')} /></label>
+          </fieldset>;
+        })}
+        <div className={styles.actionGroup}>
+          <button type="button" className={styles.buttonSecondary} onClick={() => setFamilyCount((count) => count + 1)}>Adicionar familiar</button>
+          {familyCount > 1 && <button type="button" className={styles.buttonSecondary} onClick={() => setFamilyCount((count) => Math.max(1, count - 1))}>Remover última linha</button>}
+        </div>
+      </div>
+      <div className={styles.formSection}>
+        <h2>Termos</h2>
+        {termsError && <p className={styles.errorText} role="alert">{termsError}</p>}
+        {terms
+          ? <div className={styles.termsText}><p>{terms.content}</p><small>Versão {terms.version}</small></div>
+          : <p role="status">Carregando os termos…</p>}
+        <label className={styles.consent}>
+          <input type="checkbox" name="termsAccepted" required checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} />
+          <span>Li e aceito os termos aplicáveis a esta solicitação.</span>
+        </label>
+        <p>A aprovação da solicitação não confirma ingresso institucional.</p>
       </div>
       <div className={styles.formFooter}>
         <button type="button" className={styles.buttonSecondary} onClick={onCancel}>Cancelar</button>
-        <button type="submit" className={styles.buttonPrimary}><FilePlus2 size={17} /> {isAdmin ? 'Registrar matrícula' : 'Enviar solicitação'}</button>
+        <button type="submit" className={styles.buttonPrimary} disabled={!terms || Boolean(termsError)}><FilePlus2 size={17} /> {record ? 'Salvar alterações' : isAdmin ? 'Registrar matrícula' : 'Enviar solicitação'}</button>
       </div>
     </form>
   </>;
@@ -685,14 +863,39 @@ function EnrollmentList({ area, enrollments, filteredCount, page, maxPage, query
 
 function EnrollmentDetail({ enrollment, beneficiary, area, newEnrollment, record, onAction, link }: { enrollment?: Enrollment; beneficiary?: Beneficiary; area: Area; newEnrollment: boolean; record?: EnrollmentRecord; onAction: (id: string, action: Action) => void; link: (to: string, label: string, className?: string) => ReactNode }) {
   if (!enrollment) return <EmptyState title="Solicitação não encontrada" description="O identificador não corresponde a uma solicitação disponível para sua conta." action={link(area === 'admin' ? '/admin/matriculas' : '/portal/matriculas', 'Voltar para matrículas', styles.buttonSecondary)} />;
+  const anamnese = record?.anamnese;
+  const medicalFields = anamnese
+    ? Object.entries(anamnese).filter(([key, value]) =>
+      !['id', 'beneficiary_id', 'enrollment_id', 'createdAt', 'updatedAt'].includes(key) && value !== null && value !== undefined)
+    : [];
   return <>
-    <PageTitle eyebrow={area === 'admin' ? 'Análise administrativa' : 'Acompanhamento do responsável'} title={enrollment.id} description={`Solicitada em ${formatDate(enrollment.requestedAt)} · Beneficiário: ${beneficiary?.fullName ?? '—'}`} actions={area === 'admin' && actionsFor(enrollment.status).length > 0 && <div className={styles.actionGroup}>{actionsFor(enrollment.status).map((action) => <button key={action} className={action === 'Recusar' ? styles.buttonDanger : styles.buttonSecondary} onClick={() => onAction(enrollment.id, action)}>{action}</button>)}</div>} />
+    <PageTitle eyebrow={area === 'admin' ? 'Análise administrativa' : 'Acompanhamento do responsável'} title={enrollment.id} description={`Solicitada em ${formatDate(enrollment.requestedAt)} · Beneficiário: ${beneficiary?.fullName ?? '—'}`} actions={<div className={styles.actionGroup}>{area === 'portal' && link('/portal/fichas', 'Continuar fichas', styles.buttonSecondary)}{link(`/${area}/matriculas/${enrollment.id}/editar`, 'Editar matrícula', styles.buttonSecondary)}{area === 'admin' && actionsFor(enrollment.status).map((action) => <button key={action} className={action === 'Recusar' ? styles.buttonDanger : styles.buttonSecondary} onClick={() => onAction(enrollment.id, action)}>{action}</button>)}</div>} />
     {newEnrollment && <div className={styles.successBanner}><Check size={18} /><span><strong>Solicitação registrada.</strong> O identificador é {enrollment.id}; a solicitação está “{enrollment.status}”.</span></div>}
     <div className={styles.contentGrid}>
       <section className={styles.panel}><div className={styles.panelHeading}><div><h2>Status e informações</h2><p>A aprovação não representa ingresso institucional.</p></div><StatusBadge status={enrollment.status} /></div><dl className={styles.detailList}><div><dt>Beneficiário</dt><dd>{beneficiary?.fullName ?? '—'}</dd></div><div><dt>Responsável</dt><dd>{enrollment.parentName}</dd></div><div><dt>Data da solicitação</dt><dd>{formatDate(enrollment.requestedAt)}</dd></div><div><dt>Última atualização</dt><dd>{formatDate(enrollment.updatedAt)}</dd></div>{record?.beneficiary.school && <div><dt>Escola</dt><dd>{record.beneficiary.school}</dd></div>}{record?.beneficiary.period && <div><dt>Período</dt><dd>{record.beneficiary.period}</dd></div>}{record?.beneficiary.religion && <div><dt>Religião</dt><dd>{record.beneficiary.religion}</dd></div>}{enrollment.reviewNotes && <div><dt>Observação</dt><dd>{enrollment.reviewNotes}</dd></div>}</dl></section>
       <section className={styles.panel}><div className={styles.panelHeading}><div><h2>Histórico da solicitação</h2><p>Eventos registrados pela API</p></div></div><ol className={styles.timeline}>{enrollment.history.map((event) => <li key={event.id}><span className={styles.timelineDot} /><div><time>{formatDate(event.date)}</time><p>{event.description}</p><small>{event.author}</small></div></li>)}</ol></section>
     </div>
+    <section className={styles.panel}>
+      <div className={styles.panelHeading}><div><h2>Preenchimento das fichas</h2><p>Estado calculado a partir dos dados persistidos</p></div><StatusBadge status={record?.formsComplete ? 'Fichas completas' : 'Fichas pendentes'} /></div>
+      <div className={styles.activityList}>
+        {record?.formsStatus.map((form) => <div className={styles.activityItem} key={form.kind}>
+          <span className={styles.activityIcon}>{form.status === 'COMPLETE' ? <Check size={17} /> : <Clock3 size={17} />}</span>
+          <span className={styles.activityText}><strong>{form.title}</strong><small>{form.required ? 'Obrigatória' : 'Opcional'}</small></span>
+          <FormStatusBadge status={form.status} />
+        </div>)}
+      </div>
+    </section>
+    {area === 'admin' && medicalFields.length > 0 && <details className={styles.panel}>
+      <summary className={styles.smallAction}>Consultar ficha de anamnese</summary>
+      <dl className={styles.detailList}>{medicalFields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{typeof value === 'boolean' ? value ? 'Sim' : 'Não' : String(value)}</dd></div>)}</dl>
+    </details>}
   </>;
+}
+
+function FormStatusBadge({ status }: { status: string }) {
+  const label = status === 'COMPLETE' ? 'Preenchida' : status === 'INCOMPLETE' ? 'Incompleta' : 'Pendente';
+  const tone = status === 'COMPLETE' ? 'positive' : status === 'INCOMPLETE' ? 'warning' : 'neutral';
+  return <span className={`${styles.badge} ${styles[`badge_${tone}`]}`}><span aria-hidden="true" />{label}</span>;
 }
 
 function TrackingPage({ area, beneficiaries, enrollments, navigate }: { area: Area; beneficiaries: Beneficiary[]; enrollments: Enrollment[]; navigate: (to: string) => void }) {

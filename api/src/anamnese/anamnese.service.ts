@@ -10,38 +10,14 @@ import type { AuthenticatedUser } from '../auth/authenticated-user.js';
 import type { ICreateAnamnese } from './dto/anamnese-create.dto.js';
 import type { IFindAnamnese } from './dto/anamnese-find.dto.js';
 import type { IUpdateAnamnese } from './dto/anamnese-update.dto.js';
+import { isAnamneseComplete } from './anamnese-completion.js';
 
 @Injectable()
 export class AnamneseService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private assertComplete(data: ICreateAnamnese | IUpdateAnamnese): void {
-    if (!data.isComplete) return;
-
-    const requiredFields: (keyof ICreateAnamnese)[] = [
-      'mainComplaintEvolution',
-      'suffersFromDisease',
-      'underMedicalTreatment',
-      'usesMedication',
-      'hasAllergies',
-      'hasHadSurgery',
-      'healingProblems',
-      'anesthesiaProblems',
-      'hemorrhageProblems',
-      'rheumaticFever',
-      'heartProblems',
-      'kidneyProblems',
-      'gastricProblems',
-      'respiratoryProblems',
-      'allergicProblems',
-      'jointRheumatismProblems',
-      'diabetes',
-      'arterialHypertension',
-    ];
-    const dataValues = data as Partial<Record<keyof ICreateAnamnese, unknown>>;
-    if (requiredFields.some((field) => dataValues[field] === undefined || dataValues[field] === null)) {
-      throw new ForbiddenException('Preencha todos os campos obrigatórios antes de concluir a anamnese');
-    }
+  private isComplete(data: ICreateAnamnese | IUpdateAnamnese): boolean {
+    return isAnamneseComplete(data);
   }
 
   private ownershipWhere(user: AuthenticatedUser): Prisma.AnamneseWhereInput {
@@ -60,8 +36,6 @@ export class AnamneseService {
   }
 
   async create(user: AuthenticatedUser, data: ICreateAnamnese) {
-    const isComplete = data.isComplete ?? false;
-    this.assertComplete({ ...data, isComplete });
     const beneficiary = await this.prisma.beneficiary.findFirst({
       where: {
         id: data.beneficiary_id,
@@ -72,12 +46,27 @@ export class AnamneseService {
       select: { id: true },
     });
     if (!beneficiary) throw new NotFoundException('Beneficiário não encontrado');
+    if (data.enrollment_id) {
+      const enrollment = await this.prisma.enrollment.findFirst({
+        where: { id: data.enrollment_id, beneficiary_id: beneficiary.id },
+        select: { id: true },
+      });
+      if (!enrollment) throw new NotFoundException('Matrícula não encontrada para este beneficiário');
+    }
 
-    return this.prisma.anamnese.create({ data: { ...data, isComplete } });
+    const answers = { ...data };
+    delete answers.isComplete;
+    return this.prisma.anamnese.create({
+      data: { ...answers, isComplete: this.isComplete(answers) },
+    });
   }
 
   async createForBeneficiary(data: ICreateAnamnese) {
-    return this.prisma.anamnese.create({ data: { ...data, isComplete: data.isComplete ?? false } });
+    const answers = { ...data };
+    delete answers.isComplete;
+    return this.prisma.anamnese.create({
+      data: { ...answers, isComplete: this.isComplete(answers) },
+    });
   }
 
   async findAnamnese(user: AuthenticatedUser, filter: IFindAnamnese) {
@@ -126,11 +115,13 @@ export class AnamneseService {
       },
     });
     if (!existing) throw new NotFoundException('Anamnese não encontrada');
-    this.assertComplete({ ...existing, ...data });
+    const answers = { ...data };
+    delete answers.isComplete;
+    const isComplete = this.isComplete({ ...existing, ...answers });
 
     return this.prisma.anamnese.update({
       where: { id: existing.id },
-      data,
+      data: { ...answers, isComplete },
     });
   }
 

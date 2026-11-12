@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service.js';
 import type { ICreateUser } from '../user/dto/user-create.dto.js';
@@ -14,6 +14,9 @@ export class AuthService {
   ) {}
 
   async signup(data: ICreateUser) {
+    if (data.termsAccepted !== true) {
+      throw new BadRequestException('É necessário aceitar os termos para criar uma conta');
+    }
     return this.userService.create(data, true);
   }
 

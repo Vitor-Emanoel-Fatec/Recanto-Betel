@@ -4,6 +4,9 @@ export class ICreateAnamnese {
   @IsUUID()
   beneficiary_id!: string;
 
+  @IsOptional() @IsUUID()
+  enrollment_id?: string;
+
   @IsOptional() @IsString() @MaxLength(10000) mainComplaintEvolution?: string | null;
   @IsOptional() @IsBoolean() suffersFromDisease?: boolean | null;
   @IsOptional() @IsString() @MaxLength(10000) diseaseDescription?: string | null;
@@ -32,5 +35,7 @@ export class ICreateAnamnese {
   @IsOptional() @IsString() @MaxLength(10000) habits?: string | null;
   @IsOptional() @IsString() @MaxLength(10000) familyHistory?: string | null;
   @IsOptional() @IsString() @MaxLength(10000) otherInformation?: string | null;
+  @IsOptional() @IsBoolean() declarationAccepted?: boolean | null;
+  @IsOptional() @IsString() @MaxLength(191) responsibleSignature?: string | null;
   @IsOptional() @IsBoolean() isComplete?: boolean;
 }

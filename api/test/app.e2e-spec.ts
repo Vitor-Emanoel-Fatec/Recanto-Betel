@@ -13,14 +13,23 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('api');
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  it('/api/auth/terms (GET)', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/auth/terms')
+      .expect(200);
+
+    expect(response.body.version).toMatch(/^sha256-/);
+    expect(response.body.content).toContain('Projeto Samaritano');
+  });
+
+  it('does not expose a scaffold root route', () => {
     return request(app.getHttpServer())
       .get('/')
-      .expect(200)
-      .expect('Hello World!');
+      .expect(404);
   });
 
   afterEach(async () => {

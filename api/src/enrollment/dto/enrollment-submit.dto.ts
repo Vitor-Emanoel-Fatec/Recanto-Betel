@@ -7,6 +7,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Equals,
   Matches,
   Max,
   MaxLength,
@@ -18,7 +19,7 @@ import { ICreateAnamnese } from '../../anamnese/dto/anamnese-create.dto.js';
 import { OmitType, PartialType } from '@nestjs/mapped-types';
 
 class EnrollmentAnamneseDto extends PartialType(
-  OmitType(ICreateAnamnese, ['beneficiary_id'] as const),
+  OmitType(ICreateAnamnese, ['beneficiary_id', 'enrollment_id'] as const),
 ) {}
 
 class ParentSubmissionDto {
@@ -47,8 +48,8 @@ class ParentSubmissionDto {
   @Type(() => Number)
   salary?: number;
 
-  @IsInt() @Type(() => Number)
-  relation_type!: number;
+  @IsString() @MinLength(2) @MaxLength(191)
+  relation_type!: string;
 }
 
 class AddressSubmissionDto {
@@ -151,8 +152,8 @@ class RelativeSubmissionDto {
   @IsDateString()
   birthday!: string;
 
-  @IsInt() @Type(() => Number)
-  relation!: number;
+  @IsString() @MinLength(2) @MaxLength(191)
+  relation!: string;
 
   @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) @Type(() => Number)
   salary!: number;
@@ -170,6 +171,10 @@ class EscortSubmissionDto {
 }
 
 export class EnrollmentSubmitDto {
+  @IsBoolean()
+  @Equals(true)
+  termsAccepted!: boolean;
+
   @ValidateNested() @Type(() => ParentSubmissionDto)
   parent!: ParentSubmissionDto;
 

@@ -12,6 +12,8 @@ model User {
   email    String  @unique
   password String
   role     String  @default("USER")
+  termsAcceptedVersion String? @db.VarChar(32)
+  termsAcceptedAt DateTime?
   parent   Parent?
   enrollmentEvents EnrollmentEvent[]
 
@@ -36,6 +38,12 @@ enum EnrollmentEventType {
   ACCEPTED
   REJECTED
   RETURNED_TO_PENDING
+}
+
+enum EnrollmentFormKind {
+  TERMO
+  AUTORIZACAO
+  RELATOS
 }
 
 model Beneficiary {
@@ -116,6 +124,7 @@ model AuthorizedEscorts {
 model Anamnese {
   id             String @id @default(uuid())
   beneficiary_id String @unique
+  enrollment_id  String? @unique
 
   mainComplaintEvolution  String? @db.Text
   suffersFromDisease      Boolean?
@@ -147,9 +156,12 @@ model Anamnese {
   habits           String? @db.Text
   familyHistory    String? @db.Text
   otherInformation String? @db.Text
-  isComplete       Boolean @default(true)
+  declarationAccepted Boolean?
+  responsibleSignature String? @db.VarChar(191)
+  isComplete       Boolean @default(false)
 
   beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
+  enrollment  Enrollment?  @relation(fields: [enrollment_id], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -179,7 +191,7 @@ model Relatives {
   beneficiary_id String
   name           String
   birthday       DateTime
-  relation       Int
+  relation       String   @db.VarChar(191)
   salary         Decimal  @db.Decimal(10, 2)
 
   beneficiary Beneficiary? @relation(fields: [beneficiary_id], references: [id])
@@ -192,7 +204,7 @@ model ParentBenificiary {
   id               String @id @default(uuid())
   beneficiary_id   String
   parent_id        String
-  relationshipType Int
+  relationshipType String @db.VarChar(191)
 
   beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
   parent      Parent      @relation(fields: [parent_id], references: [id])
@@ -208,6 +220,8 @@ model Enrollment {
   parent_id      String
   beneficiary_id String
   status         EnrollmentStatus @default(PENDING)
+  termsAcceptedVersion String?   @db.VarChar(32)
+  termsAcceptedAt DateTime?
   decisionNote   String?         @db.Text
   submittedAt    DateTime        @default(now())
   createdAt      DateTime        @default(now())
@@ -216,9 +230,25 @@ model Enrollment {
   parent      Parent               @relation(fields: [parent_id], references: [id])
   beneficiary Beneficiary          @relation(fields: [beneficiary_id], references: [id])
   history     EnrollmentEvent[]
+  forms       EnrollmentForm[]
+  anamnese    Anamnese?
 
   @@index([parent_id, status])
   @@index([beneficiary_id, status])
+}
+
+model EnrollmentForm {
+  id            String            @id @default(uuid())
+  enrollment_id String
+  kind          EnrollmentFormKind
+  data          Json
+  isComplete    Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollment_id], references: [id], onDelete: Cascade)
+
+  @@unique([enrollment_id, kind])
 }
 
 model EnrollmentEvent {

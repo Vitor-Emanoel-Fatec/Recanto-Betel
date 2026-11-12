@@ -6,6 +6,7 @@ import type { PrismaService } from '../database/prisma.service.js';
 describe('AnamneseService authorization', () => {
   const prisma = {
     beneficiary: { findFirst: vi.fn() },
+    enrollment: { findFirst: vi.fn() },
     anamnese: {
       create: vi.fn(),
       findFirst: vi.fn(),
@@ -67,6 +68,31 @@ describe('AnamneseService authorization', () => {
     });
   });
 
+  it('links a new anamnese to an enrollment belonging to the same beneficiary', async () => {
+    prisma.beneficiary.findFirst.mockResolvedValue({ id: 'beneficiary-id' });
+    prisma.enrollment.findFirst.mockResolvedValue({ id: 'enrollment-id' });
+    prisma.anamnese.create.mockResolvedValue({ id: 'record-id', enrollment_id: 'enrollment-id' });
+
+    await expect(service.create(parent, {
+      beneficiary_id: 'beneficiary-id',
+      enrollment_id: 'enrollment-id',
+      habits: 'Teste fictício',
+    })).resolves.toMatchObject({ enrollment_id: 'enrollment-id' });
+
+    expect(prisma.enrollment.findFirst).toHaveBeenCalledWith({
+      where: { id: 'enrollment-id', beneficiary_id: 'beneficiary-id' },
+      select: { id: true },
+    });
+    expect(prisma.anamnese.create).toHaveBeenCalledWith({
+      data: {
+        beneficiary_id: 'beneficiary-id',
+        enrollment_id: 'enrollment-id',
+        habits: 'Teste fictício',
+        isComplete: false,
+      },
+    });
+  });
+
   it('allows Parent updates only after finding the record through their relationship', async () => {
     prisma.anamnese.findFirst.mockResolvedValue({ id: 'owned-record' });
     prisma.anamnese.update.mockResolvedValue({ id: 'owned-record', isComplete: false });
@@ -79,7 +105,7 @@ describe('AnamneseService authorization', () => {
     });
     expect(prisma.anamnese.update).toHaveBeenCalledWith({
       where: { id: 'owned-record' },
-      data: { habits: 'draft' },
+      data: { habits: 'draft', isComplete: false },
     });
   });
 

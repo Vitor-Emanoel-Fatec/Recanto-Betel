@@ -4,11 +4,11 @@ import { Hero } from '../components/Hero/Hero';
 import { Timeline } from '../components/Timeline/Timeline';
 import { MissionJourney } from '../components/MissionJourney/MissionJourney';
 import { Services } from '../components/Services/Services';
-import { Projects } from '../components/Projects/Projects';
+// import { Projects } from '../components/Projects/Projects';
 import { Impact } from '../components/Impact/Impact';
-import { Highlights } from '../components/Highlights/Highlights';
-import { WebRadio } from '../components/WebRadio/WebRadio';
-import { Transparency } from '../components/Transparency/Transparency';
+// import { Highlights } from '../components/Highlights/Highlights';
+// import { WebRadio } from '../components/WebRadio/WebRadio';
+// import { Transparency } from '../components/Transparency/Transparency';
 import { Partners } from '../components/Partners/Partners';
 import { Support } from '../components/Support/Support';
 import { News } from '../components/News/News';
@@ -57,20 +57,20 @@ export const App: React.FC = () => {
         {/* 4. Nossos Serviços */}
         <Services />
 
-        {/* 5. Nossos Projetos */}
-        <Projects />
+        {/* 5. Nossos Projetos
+        <Projects /> */}
 
         {/* 6. Nosso Impacto */}
         <Impact />
 
-        {/* Destaque 2026: Rosa de Saron — Alunos Destaque 2026 */}
-        <Highlights />
+        {/* Destaque 2026: Rosa de Saron — Alunos Destaque 2026
+        <Highlights /> */}
 
-        {/* Web Rádio Recanto Betel */}
-        <WebRadio />
+        {/* Web Rádio Recanto Betel
+        <WebRadio /> */}
 
-        {/* 7. Transparência & Prestação de Contas */}
-        <Transparency onShowToast={showToast} />
+        {/* 7. Transparência & Prestação de Contas
+        <Transparency onShowToast={showToast} /> */}
 
         {/* Parcerias Institucionais */}
         <Partners />

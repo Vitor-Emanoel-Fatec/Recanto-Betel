@@ -6,6 +6,11 @@ export interface AuthUser {
   role: string;
 }
 
+export interface RegistrationTerms {
+  version: string;
+  content: string;
+}
+
 function isAuthUser(value: unknown): value is AuthUser {
   return (
     typeof value === 'object' &&
@@ -19,15 +24,19 @@ function isAuthUser(value: unknown): value is AuthUser {
   );
 }
 
-export async function signUp(email: string, password: string): Promise<AuthUser> {
+export async function signUp(email: string, password: string, termsAccepted: boolean): Promise<AuthUser> {
   const response = await apiRequest<unknown>('/auth/signup', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, termsAccepted }),
   });
   if (!isAuthUser(response)) {
     throw new Error('A API retornou dados de usuário incompletos.');
   }
   return { id: response.id, email: response.email, role: response.role };
+}
+
+export function getRegistrationTerms(): Promise<RegistrationTerms> {
+  return apiRequest<RegistrationTerms>('/auth/terms');
 }
 
 export async function signIn(email: string, password: string): Promise<AuthUser> {

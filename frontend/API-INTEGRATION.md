@@ -7,9 +7,10 @@ the browser can send the API's HttpOnly session cookie.
 
 ## Authentication and access
 
-- `POST /api/auth/signup` accepts `{ email, password }`, creates only a `USER`, and
+- `GET /api/auth/terms` returns the current terms content and its content-derived version.
+- `POST /api/auth/signup` accepts `{ email, password, termsAccepted: true }`, creates only a `USER`, and
   returns the safe `{ id, email, role }` projection. Passwords must be at least 12
-  characters.
+  characters; explicit terms acceptance is required.
 - `POST /api/auth/signin` accepts `{ email, password }`, sets the `recanto_access`
   HttpOnly cookie, and returns `{ id, email, role }`. The JWT is not returned in the
   response body or stored in browser storage.
@@ -31,6 +32,8 @@ the browser can send the API's HttpOnly session cookie.
 | `GET /api/enrollments/mine` | `USER`, `PARENT` | List the signed-in user's requests |
 | `GET /api/enrollments/mine/:id` | `USER`, `PARENT` | Read one owned request |
 | `GET /api/enrollments?status=PENDING` | `ADMIN` | List/filter all enrollment requests |
+| `PUT /api/enrollments/:id` | `PARENT`, `ADMIN` | Update the existing request and its linked registration data |
+| `PUT /api/enrollments/:id/forms/:kind` | `PARENT`, `ADMIN` | Save a term, authorization, or report form draft/completion (`termo`, `autorizacao`, `relatos`) |
 | `PATCH /api/enrollments/:id/status` | `ADMIN` | Set `PENDING`, `ACCEPTED`, or `REJECTED` and append history |
 | `POST /api/anamnese/find` | `PARENT`, `ADMIN` | Find a health record by its ID or beneficiary ID |
 | `POST /api/anamnese` | `PARENT`, `ADMIN` | Create an authorized health record |
@@ -38,10 +41,16 @@ the browser can send the API's HttpOnly session cookie.
 | `DELETE /api/anamnese/:id` | `ADMIN` | Delete a health record |
 
 Enrollment requests persist the beneficiary, address, household income/benefits,
-family members, authorized escorts, a draft anamnese, the responsible account link,
-and a `PENDING` enrollment with its initial event in one transaction. Acceptance
-does not automatically activate a beneficiary; enrollment review and institutional
-admission remain separate decisions.
+family members, authorized escorts, the accepted terms version/time, a draft
+anamnese linked to both the beneficiary and enrollment, the responsible account
+link, and a `PENDING` enrollment with its initial event in one transaction.
+Checklist progress is derived from these persisted records and is returned as
+`formsStatus` and `formsComplete`; it is separate from the administrative enrollment
+decision. Acceptance does not automatically activate a beneficiary; enrollment
+review and institutional admission remain separate decisions.
+
+The current terms content is a project-level draft and needs institutional review
+before being treated as an approved legal or privacy notice.
 
 ## Configuration and deployment
 
@@ -55,19 +64,15 @@ needed, for credentialed CORS. Set the API database variables according to the
 Prisma configuration and configure `VITE_API_URL` only when the default same-origin
 proxy is not appropriate.
 
-The schema includes an additive migration at
-`api/prisma/migrations/20261110040000_auth_enrollment_anamnese_safe/`. It has **not**
-been applied to any database as part of this work. Review the target and back up
-existing data before running the migration; do not point deployment commands at a
-production or otherwise unconfirmed database.
+The schema includes the additive migration at
+`api/prisma/migrations/20261112000000_enrollment_forms_terms/`. It adds persisted
+form drafts, accepted-terms metadata, free-text relationship fields, and the
+enrollment link for anamnese records. It has **not** been applied to any database
+as part of this work. Review the target and back up existing data before running
+the migration; do not point deployment commands at a production or otherwise
+unconfirmed database.
 
-The frontend currently exposes the real enrollment and anamnese flows. Other
-legacy form types (terms, attendance/medical authorizations, and reports) do not
-have matching persisted API workflows and are not presented as successfully
-submitted. They need defined backend contracts before being re-enabled.
-
-Validation completed locally: API build, 38 API unit tests, an HTTP auth flow test
-with an in-memory Prisma mock, frontend type-check and production build, and Prisma
-schema validation. No database migration or authenticated browser-to-database flow
-was run; those require a configured API, test database, and the migration applied
-to that test database.
+Validation completed locally: Prisma schema validation and client generation, API
+build, 43 API unit tests, and frontend type-check and production build. No database
+migration or authenticated browser-to-database flow was run; those require a
+configured API, test database, and the migration applied to that test database.

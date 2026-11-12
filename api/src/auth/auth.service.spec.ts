@@ -23,11 +23,20 @@ describe('AuthService', () => {
       email: user.email,
       password: 'a sufficiently long test password',
       role: 'ADMIN',
+      termsAccepted: true,
     })).resolves.toEqual(user);
     expect(users.create).toHaveBeenCalledWith(
-      { email: user.email, password: 'a sufficiently long test password', role: 'ADMIN' },
+      { email: user.email, password: 'a sufficiently long test password', role: 'ADMIN', termsAccepted: true },
       true,
     );
+  });
+
+  it('rejects signup without explicit terms acceptance', async () => {
+    await expect(service.signup({
+      email: user.email,
+      password: 'a sufficiently long test password',
+    })).rejects.toThrow('É necessário aceitar os termos para criar uma conta');
+    expect(users.create).not.toHaveBeenCalled();
   });
 
   it('returns a signed token and safe identity after credential verification', async () => {

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { UserRound, X } from 'lucide-react';
 import styles from './AuthPopover.module.scss';
 import { ApiError } from '../../services/apiClient';
-import { signUp } from '../../services/authService';
+import { getRegistrationTerms, signUp, type RegistrationTerms } from '../../services/authService';
 import { useAuth } from '../../services/AuthContext';
 
 type AuthMode = 'signin' | 'signup';
@@ -14,9 +14,31 @@ export const AuthPopover = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [terms, setTerms] = useState<RegistrationTerms | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen || mode !== 'signup') return;
+
+    let active = true;
+    getRegistrationTerms()
+      .then((result) => {
+        if (active) setTerms(result);
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setMessage({
+            text: error instanceof Error ? error.message : 'Não foi possível carregar os termos.',
+            isError: true,
+          });
+        }
+      });
+
+    return () => { active = false; };
+  }, [isOpen, mode]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -44,14 +66,19 @@ export const AuthPopover = () => {
       setMessage({ text: 'As senhas não coincidem.', isError: true });
       return;
     }
+    if (mode === 'signup' && (!terms || !termsAccepted)) {
+      setMessage({ text: 'Leia e aceite os termos para criar sua conta.', isError: true });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
       if (mode === 'signup') {
-        await signUp(email, password);
+        await signUp(email, password, termsAccepted);
         setMode('signin');
         setPassword('');
         setConfirmPassword('');
+        setTermsAccepted(false);
         setMessage({
           text: 'Cadastro criado. Entre para solicitar uma matrícula e completar seu perfil de responsável.',
           isError: false,
@@ -84,6 +111,8 @@ export const AuthPopover = () => {
     setMessage(null);
     setPassword('');
     setConfirmPassword('');
+    setTermsAccepted(false);
+    setTerms(null);
   };
 
   return (
@@ -167,13 +196,37 @@ export const AuthPopover = () => {
               </label>
             )}
 
+            {mode === 'signup' && (
+              <>
+                <div className={styles.termsText} aria-live="polite">
+                  {terms
+                    ? <><p>{terms.content}</p><small>Versão {terms.version}</small></>
+                    : <p>Carregando os termos…</p>}
+                </div>
+                <label className={styles.termsAcceptance}>
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    disabled={!terms}
+                    onChange={(event) => setTermsAccepted(event.target.checked)}
+                    required
+                  />
+                  <span>Li e aceito os termos acima.</span>
+                </label>
+              </>
+            )}
+
             {message && (
               <p className={`${styles.message} ${message.isError ? styles['message--error'] : styles['message--success']}`} role="status">
                 {message.text}
               </p>
             )}
 
-            <button className={styles.submitButton} type="submit" disabled={isSubmitting}>
+            <button
+              className={styles.submitButton}
+              type="submit"
+              disabled={isSubmitting || (mode === 'signup' && (!terms || !termsAccepted))}
+            >
               {isSubmitting ? 'Aguarde...' : mode === 'signin' ? 'Entrar' : 'Criar cadastro'}
             </button>
           </form>}

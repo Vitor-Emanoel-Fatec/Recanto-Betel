@@ -70,6 +70,8 @@
 
 .main { max-width: 1240px; min-height: calc(100vh - 190px); margin: 0 auto; padding: 24px 32px 64px; }
 .breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-bottom: 18px; color: $color-text-muted; font-size: .75rem; }
+.breadcrumbItem { display: inline-flex; align-items: center; gap: 9px; }
+.breadcrumb a { color: $color-navy-light; &:hover { text-decoration: underline; } }
 .breadcrumb strong { color: $color-navy; }
 .demoNotice, .successBanner { display: flex; align-items: flex-start; gap: 10px; padding: 12px 15px; color: #644d0b; border: 1px solid #f1df9c; border-radius: $radius-sm; background: #fff9e8; font-size: .79rem; line-height: 1.5; }
 .demoNotice svg, .successBanner svg { flex: 0 0 auto; margin-top: 1px; }
@@ -125,6 +127,10 @@
 .quickLink strong { font-size: .8rem; }
 .quickLink small { color: $color-text-muted; font-size: .69rem; }
 .helperNote { margin-top: 16px; color: $color-text-muted; font-size: .73rem; line-height: 1.5; }
+.formStatus { color: $color-text-muted; font-size: .7rem; font-weight: 700; white-space: nowrap; }
+.termsText { padding: 12px; color: $color-text-muted; border: 1px solid $color-border; border-radius: $radius-sm; background: $color-surface-hover; font-size: .78rem; line-height: 1.5; }
+.termsText small { display: block; margin-top: 7px; font-weight: 750; }
+.errorText { color: #9c3434; font-size: .78rem; }
 .badge { display: inline-flex; align-items: center; gap: 6px; width: fit-content; padding: 5px 9px; border-radius: $radius-full; font-size: .67rem; font-weight: 750; white-space: nowrap; }
 .badge > span { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .badge_positive { color: #286744; background: #eaf6ed; }
@@ -210,6 +216,7 @@ td small { display: block; margin-top: 3px; color: $color-text-light; font-size:
   .headerTop { min-height: 66px; padding: 0 16px; }
   .demoBadge { display: none; }
   .userButton { font-size: .72rem; }
+  .userButton > span:not(.avatar) { display: none; }
   .mobileToggle { display: grid; width: 36px; height: 36px; place-items: center; }
   .navRow { display: none; padding: 0 16px 13px; }
   .navRowOpen { display: flex; align-items: stretch; flex-direction: column; gap: 10px; }

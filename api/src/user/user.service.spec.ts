@@ -1,6 +1,7 @@
 import * as argon2 from 'argon2';
 import { UserService } from './user.service.js';
 import type { PrismaService } from '../database/prisma.service.js';
+import { TERMS_VERSION } from '../auth/terms.js';
 
 describe('UserService credentials and projections', () => {
   const prisma = {
@@ -49,8 +50,11 @@ describe('UserService credentials and projections', () => {
       email: 'parent@example.test',
       password: 'a sufficiently long test password',
       role: 'ADMIN',
+      termsAccepted: true,
     }, true)).resolves.toMatchObject({ role: 'USER' });
     expect(prisma.user.create.mock.calls[0][0].data.role).toBe('USER');
+    expect(prisma.user.create.mock.calls[0][0].data.termsAcceptedVersion).toBe(TERMS_VERSION);
+    expect(prisma.user.create.mock.calls[0][0].data.termsAcceptedAt).toBeInstanceOf(Date);
   });
 
   it('verifies a legacy plaintext password and conditionally rehashes it', async () => {
