@@ -10,6 +10,7 @@ import type { AuthenticatedUser } from '../auth/authenticated-user.js';
 import { TERMS_VERSION } from '../auth/terms.js';
 import { hasAnamneseAnswers, isAnamneseComplete } from '../anamnese/anamnese-completion.js';
 import { PrismaService } from '../database/prisma.service.js';
+import { createPublicCode } from '../common/public-codes.js';
 import type { EnrollmentDecisionDto } from './dto/enrollment-decision.dto.js';
 import type { EnrollmentFormDto } from './dto/enrollment-form.dto.js';
 import type { EnrollmentFindDto } from './dto/enrollment-find.dto.js';
@@ -219,6 +220,7 @@ export class EnrollmentService {
           ? await transaction.parent.findUnique({ where: { cpf: input.parent.cpf } })
             ?? await transaction.parent.create({
               data: {
+                publicCode: createPublicCode('RES'),
                 user_id: null,
                 name: input.parent.name.trim(),
                 cpf: input.parent.cpf,
@@ -233,6 +235,7 @@ export class EnrollmentService {
           : await transaction.parent.findUnique({ where: { user_id: user.id } })
             ?? await transaction.parent.create({
               data: {
+                publicCode: createPublicCode('RES'),
                 user_id: user.id,
                 name: input.parent.name.trim(),
                 cpf: input.parent.cpf,
@@ -247,6 +250,7 @@ export class EnrollmentService {
 
         const beneficiary = await transaction.beneficiary.create({
           data: {
+            publicCode: createPublicCode('BEN'),
             name: input.beneficiary.name.trim(),
             birthday: new Date(input.beneficiary.birthday),
             rg: input.beneficiary.rg,
@@ -302,6 +306,7 @@ export class EnrollmentService {
         });
         const enrollment = await transaction.enrollment.create({
           data: {
+            publicCode: createPublicCode('MAT'),
             parent_id: parent.id,
             beneficiary_id: beneficiary.id,
             status: 'PENDING',

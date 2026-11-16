@@ -365,7 +365,7 @@ export function FichasHub({ enrollments, navigate }: {
       {enrollments.length ? enrollments.map((enrollment) => (
         <section className={styles.panel} key={enrollment.id}>
           <div className={styles.panelHeading}>
-            <div><h2>{enrollment.beneficiary.name}</h2><p>Matrícula {enrollment.id}</p></div>
+            <div><h2>{enrollment.beneficiary.name}</h2><p>Matrícula {enrollment.publicCode}</p></div>
             <span className={styles.badge}>{enrollment.formsComplete ? 'Fichas completas' : 'Fichas pendentes'}</span>
           </div>
           <div className={styles.activityList}>

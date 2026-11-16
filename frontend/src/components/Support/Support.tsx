@@ -8,8 +8,6 @@ import {
   ArrowRight,
   Sparkles,
   Check,
-  Send,
-  ExternalLink,
 } from 'lucide-react';
 import { CONTACT_INFO } from '../../data/mockData';
 import { Modal } from '../Common/Modal';
@@ -25,24 +23,9 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
   const [volunteerModalOpen, setVolunteerModalOpen] = useState(false);
   const [memberModalOpen, setMemberModalOpen] = useState(false);
 
-  // Volunteer form state
-  const [volName, setVolName] = useState('');
-  const [volEmail, setVolEmail] = useState('');
-  const [volPhone, setVolPhone] = useState('');
-  const [volArea, setVolArea] = useState('Pedagógico / Reforço');
-
   const copyPixKey = () => {
     navigator.clipboard.writeText(CONTACT_INFO.pixKey);
     onShowToast('✓ Chave Pix copiada com sucesso!', 'success');
-  };
-
-  const handleVolunteerSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onShowToast('✓ Cadastro de voluntário enviado! Entraremos em contato.', 'success');
-    setVolunteerModalOpen(false);
-    setVolName('');
-    setVolEmail('');
-    setVolPhone('');
   };
 
   const transformationSteps = [

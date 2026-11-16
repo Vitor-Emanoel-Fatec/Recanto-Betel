@@ -48,6 +48,7 @@ enum EnrollmentFormKind {
 
 model Beneficiary {
   id                String              @id @default(uuid())
+  publicCode        String              @unique @db.VarChar(32)
   name              String
   birthday          DateTime            @db.Date
   rg                Int
@@ -169,6 +170,7 @@ model Anamnese {
 
 model Parent {
   id                String              @id @default(uuid())
+  publicCode        String              @unique @db.VarChar(32)
   user_id           String?             @unique
   name              String
   cpf               String              @unique @db.VarChar(11)
@@ -217,6 +219,7 @@ model ParentBenificiary {
 
 model Enrollment {
   id             String          @id @default(uuid())
+  publicCode     String          @unique @db.VarChar(32)
   parent_id      String
   beneficiary_id String
   status         EnrollmentStatus @default(PENDING)

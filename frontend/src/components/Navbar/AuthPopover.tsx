@@ -15,6 +15,9 @@ export const AuthPopover = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [terms, setTerms] = useState<RegistrationTerms | null>(null);
+  const [termsStatus, setTermsStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [termsError, setTermsError] = useState('');
+  const [termsRetry, setTermsRetry] = useState(0);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,21 +27,29 @@ export const AuthPopover = () => {
     if (!isOpen || mode !== 'signup') return;
 
     let active = true;
+    setTerms(null);
+    setTermsError('');
+    setTermsStatus('loading');
     getRegistrationTerms()
       .then((result) => {
-        if (active) setTerms(result);
+        if (active) {
+          setTerms(result);
+          setTermsStatus('ready');
+        }
       })
       .catch((error: unknown) => {
         if (active) {
-          setMessage({
-            text: error instanceof Error ? error.message : 'Não foi possível carregar os termos.',
-            isError: true,
-          });
+          const reason = error instanceof Error ? error.message : '';
+          const message = reason.toLocaleLowerCase('pt-BR').includes('termos')
+            ? reason
+            : 'Não foi possível carregar os termos. Verifique sua conexão e tente novamente.';
+          setTermsError(message);
+          setTermsStatus('error');
         }
       });
 
     return () => { active = false; };
-  }, [isOpen, mode]);
+  }, [isOpen, mode, termsRetry]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -66,7 +77,7 @@ export const AuthPopover = () => {
       setMessage({ text: 'As senhas não coincidem.', isError: true });
       return;
     }
-    if (mode === 'signup' && (!terms || !termsAccepted)) {
+    if (mode === 'signup' && (termsStatus !== 'ready' || !terms || !termsAccepted)) {
       setMessage({ text: 'Leia e aceite os termos para criar sua conta.', isError: true });
       return;
     }
@@ -113,6 +124,8 @@ export const AuthPopover = () => {
     setConfirmPassword('');
     setTermsAccepted(false);
     setTerms(null);
+    setTermsStatus('idle');
+    setTermsError('');
   };
 
   return (
@@ -198,16 +211,33 @@ export const AuthPopover = () => {
 
             {mode === 'signup' && (
               <>
-                <div className={styles.termsText} aria-live="polite">
-                  {terms
-                    ? <><p>{terms.content}</p><small>Versão {terms.version}</small></>
-                    : <p>Carregando os termos…</p>}
+                <div
+                  className={styles.termsText}
+                  aria-live="polite"
+                  aria-busy={termsStatus === 'loading'}
+                >
+                  {termsStatus === 'loading' && <p role="status">Carregando os termos…</p>}
+                  {termsStatus === 'error' && (
+                    <>
+                      <p role="alert">{termsError}</p>
+                      <button
+                        className={styles.termsRetryButton}
+                        type="button"
+                        onClick={() => setTermsRetry((attempt) => attempt + 1)}
+                      >
+                        Tentar carregar novamente
+                      </button>
+                    </>
+                  )}
+                  {termsStatus === 'ready' && terms && (
+                    <><p>{terms.content}</p><small>Versão {terms.version}</small></>
+                  )}
                 </div>
                 <label className={styles.termsAcceptance}>
                   <input
                     type="checkbox"
                     checked={termsAccepted}
-                    disabled={!terms}
+                    disabled={termsStatus !== 'ready' || !terms}
                     onChange={(event) => setTermsAccepted(event.target.checked)}
                     required
                   />
@@ -217,7 +247,7 @@ export const AuthPopover = () => {
             )}
 
             {message && (
-              <p className={`${styles.message} ${message.isError ? styles['message--error'] : styles['message--success']}`} role="status">
+              <p className={`${styles.message} ${message.isError ? styles['message--error'] : styles['message--success']}`} role={message.isError ? 'alert' : 'status'}>
                 {message.text}
               </p>
             )}
@@ -225,7 +255,7 @@ export const AuthPopover = () => {
             <button
               className={styles.submitButton}
               type="submit"
-              disabled={isSubmitting || (mode === 'signup' && (!terms || !termsAccepted))}
+              disabled={isSubmitting || (mode === 'signup' && (termsStatus !== 'ready' || !terms || !termsAccepted))}
             >
               {isSubmitting ? 'Aguarde...' : mode === 'signin' ? 'Entrar' : 'Criar cadastro'}
             </button>

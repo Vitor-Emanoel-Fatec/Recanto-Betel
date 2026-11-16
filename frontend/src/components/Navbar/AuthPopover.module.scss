@@ -164,6 +164,14 @@
   }
 }
 
+.termsRetryButton {
+  color: $color-navy;
+  font-size: .75rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .field {
   display: grid;
   gap: 6px;

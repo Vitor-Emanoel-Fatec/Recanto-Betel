@@ -3,14 +3,13 @@ import {
   MapPin,
   FileBadge,
   User,
-  Phone,
   Mail,
   Send,
   ExternalLink,
   CheckCircle2,
 } from 'lucide-react';
 import { CONTACT_INFO } from '../../data/mockData';
-import { FacebookIcon, InstagramIcon, YoutubeIcon, WhatsAppIcon } from '../Common/SocialIcons';
+import { FacebookIcon, InstagramIcon } from '../Common/SocialIcons';
 import styles from './Contact.module.scss';
 
 interface ContactProps {

@@ -7,9 +7,10 @@ import styles from './PortalApp.module.scss';
 import {
   type Beneficiary, type Enrollment, type EnrollmentEvent, type EnrollmentStatus, type FichaKind,
 } from './portalData';
-import { FichaPage, FichasHub, isFichaKind } from './PortalForms';
+import { FICHAS, FichaPage, FichasHub, isFichaKind } from './PortalForms';
 import { useAuth } from '../services/AuthContext';
 import { getRegistrationTerms, type RegistrationTerms } from '../services/authService';
+import { ApiError } from '../services/apiClient';
 import {
   createAnamnese,
   decideEnrollment,
@@ -28,14 +29,83 @@ import {
 type Area = 'portal' | 'admin';
 type PageKey = 'home' | 'beneficiaries' | 'beneficiary-detail' | 'beneficiary-new' | 'enrollments' | 'enrollment-new' | 'enrollment-edit' | 'enrollment-detail' | 'tracking' | 'responsibles' | 'reports' | 'forms' | 'form';
 type Action = 'Aprovar' | 'Recusar' | 'Encaminhar para revisão';
-type PortalEnrollment = Enrollment & { parentId: string; parentEmail: string; parentContact: string };
+type PortalEnrollment = Enrollment & { parentId: string; parentPublicCode: string; parentEmail: string; parentContact: string };
 const enrollmentStatuses: EnrollmentStatus[] = ['Em análise', 'Aprovada', 'Recusada'];
+const apiFieldInputNames: Record<string, string> = {
+  'parent.name': 'parentName',
+  'parent.cpf': 'parentCpf',
+  'parent.contact': 'parentContact',
+  'parent.email': 'parentEmail',
+  'parent.profession': 'parentProfession',
+  'parent.educational_level': 'parentEducation',
+  'parent.comertial_address': 'parentWorkAddress',
+  'parent.salary': 'parentSalary',
+  'parent.relation_type': 'parentRelation',
+  'beneficiary.name': 'beneficiaryName',
+  'beneficiary.birthday': 'birthday',
+  'beneficiary.address.house_number': 'houseNumber',
+  'beneficiary.anamnese.mainComplaintEvolution': 'queixaPrincipal',
+  'beneficiary.anamnese.suffersFromDisease': 'doenca',
+  'beneficiary.anamnese.underMedicalTreatment': 'tratamento',
+  'beneficiary.anamnese.isPregnant': 'gravidez',
+  'beneficiary.anamnese.usesMedication': 'medicacao',
+  'beneficiary.anamnese.diseaseDescription': 'doencaDetalhe',
+  'beneficiary.anamnese.medicationDescription': 'medicacaoDetalhe',
+  'beneficiary.anamnese.attendingPhysicianName': 'medicoNome',
+  'beneficiary.anamnese.attendingPhysicianPhone': 'medicoTelefone',
+  'beneficiary.anamnese.hasAllergies': 'alergia',
+  'beneficiary.anamnese.allergiesDescription': 'alergiaDetalhe',
+  'beneficiary.anamnese.hasHadSurgery': 'operado',
+  'beneficiary.anamnese.surgeriesDescription': 'operadoDetalhe',
+  'beneficiary.anamnese.healingProblems': 'cicatrizacao',
+  'beneficiary.anamnese.anesthesiaProblems': 'anestesia',
+  'beneficiary.anamnese.hemorrhageProblems': 'hemorragia',
+  'beneficiary.anamnese.rheumaticFever': 'doencas_febreReumatica',
+  'beneficiary.anamnese.heartProblems': 'doencas_cardiacos',
+  'beneficiary.anamnese.kidneyProblems': 'doencas_renais',
+  'beneficiary.anamnese.gastricProblems': 'doencas_gastricos',
+  'beneficiary.anamnese.respiratoryProblems': 'doencas_respiratorios',
+  'beneficiary.anamnese.allergicProblems': 'doencas_alergicos',
+  'beneficiary.anamnese.jointRheumatismProblems': 'doencas_articulares',
+  'beneficiary.anamnese.diabetes': 'doencas_diabetes',
+  'beneficiary.anamnese.arterialHypertension': 'doencas_hipertensao',
+  'beneficiary.anamnese.habits': 'habitos',
+  'beneficiary.anamnese.familyHistory': 'antecedentesFamiliares',
+  'beneficiary.anamnese.otherInformation': 'outrasInformacoes',
+  'beneficiary.anamnese.declarationAccepted': 'declaracao',
+  'beneficiary.anamnese.responsibleSignature': 'assinatura',
+};
 const PAGE_LABELS: Record<PageKey, string> = {
   home: 'Visão geral', beneficiaries: 'Beneficiários', 'beneficiary-detail': 'Detalhes do beneficiário', 'beneficiary-new': 'Novo beneficiário',
   enrollments: 'Matrículas', 'enrollment-new': 'Nova solicitação', 'enrollment-edit': 'Editar matrícula',
   'enrollment-detail': 'Acompanhamento', tracking: 'Acompanhamento institucional', responsibles: 'Responsáveis', reports: 'Relatórios',
   forms: 'Fichas', form: 'Preencher ficha',
 };
+
+function inputNameForValidationField(field: string): string {
+  const exactName = apiFieldInputNames[field]
+    ?? apiFieldInputNames[`beneficiary.${field}`]
+    ?? apiFieldInputNames[`beneficiary.anamnese.${field}`];
+  if (exactName) return exactName;
+  const relative = field.match(/(?:^|\.)relatives\.(\d+)\.(name|birthday|relation|salary)$/);
+  if (relative) {
+    const suffix = { name: 'Name', birthday: 'Birthday', relation: 'Relation', salary: 'Salary' }[relative[2]];
+    return `relative${suffix}${relative[1]}`;
+  }
+  return field.split('.').at(-1) ?? field;
+}
+
+function focusValidationField(field: string): void {
+  const name = inputNameForValidationField(field);
+  const control = Array.from(document.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+    'input[name], select[name], textarea[name]',
+  )).find((element) => element.name === name && !element.disabled && element.getClientRects().length > 0);
+  if (!control) return;
+  control.setAttribute('aria-invalid', 'true');
+  control.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  control.focus({ preventScroll: true });
+}
+
 function routeInfo(path: string): { area: Area; page: PageKey; id?: string; formKind?: string } {
   const area: Area = path.startsWith('/admin') ? 'admin' : 'portal';
   const segments = path.split('/').filter(Boolean);
@@ -79,14 +149,16 @@ function toPortalEnrollment(record: EnrollmentRecord, fallbackParent: { id: stri
       ACCEPTED: 'Solicitação aceita pela equipe',
       REJECTED: 'Solicitação recusada pela equipe',
       RETURNED_TO_PENDING: 'Solicitação retornou para análise',
-    } as Record<string, string>)[event.type] ?? event.type}${event.note ? `: ${event.note}` : '.'}`,
+    } as Record<string, string>)[event.type] ?? 'Atualização registrada'}${event.note ? `: ${event.note}` : '.'}`,
     author: event.type === 'SUBMITTED' ? 'Registro inicial' : 'Equipe administrativa',
   }));
   return {
     id: record.id,
+    publicCode: record.publicCode,
     beneficiaryId: record.beneficiary.id,
     parentName,
     parentId: record.parent?.id ?? fallbackParent.id,
+    parentPublicCode: record.parent?.publicCode ?? '',
     parentEmail: record.parent?.email ?? fallbackParent.email,
     parentContact: record.parent?.contact ?? '',
     status: apiStatus(record.status),
@@ -100,6 +172,7 @@ function toPortalEnrollment(record: EnrollmentRecord, fallbackParent: { id: stri
 function toPortalBeneficiary(record: EnrollmentRecord, parentId: string): Beneficiary {
   return {
     id: record.beneficiary.id,
+    publicCode: record.beneficiary.publicCode,
     fullName: record.beneficiary.name,
     birthDate: record.beneficiary.birthday.slice(0, 10),
     status: apiStatus(record.status),
@@ -125,6 +198,7 @@ export function PortalApp() {
   const [pendingAction, setPendingAction] = useState<{ enrollmentId: string; action: Action } | null>(null);
   const [reason, setReason] = useState('');
   const [newEnrollmentId, setNewEnrollmentId] = useState('');
+  const [validationIssues, setValidationIssues] = useState<Array<{ field: string; message: string }>>([]);
   const current = routeInfo(path);
   const isAdmin = current.area === 'admin';
   const fallbackParent = { id: user?.id ?? '', email: user?.email ?? '' };
@@ -210,6 +284,7 @@ export function PortalApp() {
     setMobileOpen(false);
     setQuery('');
     setPage(1);
+    setValidationIssues([]);
   };
   const link = (to: string, label: string, className?: string) => (
     <a className={className} href={to} onClick={(event) => { event.preventDefault(); navigate(to); }}>{label}</a>
@@ -226,13 +301,29 @@ export function PortalApp() {
   const filtered = useMemo(() => visibleEnrollments
     .filter((item) => {
       const beneficiary = relatedBeneficiary(item.beneficiaryId);
-      const matchesQuery = `${item.id} ${item.parentName} ${beneficiary?.fullName ?? ''}`.toLowerCase().includes(query.toLowerCase());
+      const matchesQuery = `${item.publicCode} ${item.parentName} ${beneficiary?.fullName ?? ''}`.toLowerCase().includes(query.toLowerCase());
       return matchesQuery && (statusFilter === 'Todas' || item.status === statusFilter);
     })
     .sort((a, b) => sortNewest ? b.requestedAt.localeCompare(a.requestedAt) : a.requestedAt.localeCompare(b.requestedAt)),
   [visibleEnrollments, beneficiaries, query, statusFilter, sortNewest]);
   const pagedEnrollments = filtered.slice((page - 1) * 5, page * 5);
   const showToast = (message: string) => setToast(message);
+  const reportFormError = (error: unknown, fallback: string) => {
+    if (error instanceof ApiError && error.validationIssues.length > 0) {
+      setValidationIssues(error.validationIssues);
+      focusValidationField(error.validationIssues[0].field);
+      return;
+    }
+    showToast(error instanceof Error ? error.message : fallback);
+  };
+  const clearFieldValidation = (event: FormEvent<HTMLElement>) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement)) return;
+    target.removeAttribute('aria-invalid');
+    setValidationIssues((issues) => issues.filter(
+      (issue) => inputNameForValidationField(issue.field) !== target.name,
+    ));
+  };
 
   const replaceEnrollmentRecord = (record: EnrollmentRecord) => {
     setApiRecords((previous) => previous.some((item) => item.id === record.id)
@@ -331,7 +422,7 @@ export function PortalApp() {
       showToast(saveDraft ? 'Rascunho salvo. Você poderá continuar depois.' : 'Ficha salva com sucesso.');
       navigate(`/portal/matriculas/${enrollmentId}`);
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Não foi possível salvar a ficha.');
+      reportFormError(error, 'Não foi possível salvar a ficha.');
     }
   };
 
@@ -339,11 +430,31 @@ export function PortalApp() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const value = (name: string) => String(formData.get(name) ?? '').trim();
+    const numberLabels: Record<string, string> = {
+      rg: 'RG',
+      parentSalary: 'renda mensal do responsável',
+      houseNumber: 'número do endereço',
+      housingType: 'tipo de moradia',
+      housingCost: 'custo de moradia',
+      waterCost: 'gasto com água',
+      powerCost: 'gasto com energia elétrica',
+      foodCost: 'gasto com alimentação',
+      gasCost: 'gasto com gás',
+      totalIncome: 'renda familiar total',
+      perCapitaIncome: 'renda per capita',
+      benefitValue: 'valor do benefício',
+    };
     const number = (name: string, optional = false) => {
       const raw = value(name);
       if (!raw && optional) return undefined;
       const parsed = Number(raw.replace(',', '.'));
-      if (!Number.isFinite(parsed)) throw new Error(`Preencha o campo numérico ${name}.`);
+      if (!Number.isFinite(parsed)) {
+        const relative = name.match(/^relativeSalary(\d+)$/);
+        const label = relative
+          ? `renda do Familiar ${Number(relative[1]) + 1}`
+          : numberLabels[name] ?? 'valor informado';
+        throw new Error(`Informe um valor válido para ${label}.`);
+      }
       return parsed;
     };
     try {
@@ -423,7 +534,7 @@ export function PortalApp() {
       navigate(`${isAdmin ? '/admin' : '/portal'}/matriculas/${record.id}`);
       showToast(enrollmentId ? 'Matrícula atualizada.' : isAdmin ? 'Matrícula registrada para análise.' : 'Solicitação enviada para análise.');
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Não foi possível enviar a solicitação.');
+      reportFormError(error, 'Não foi possível enviar a solicitação.');
     }
   };
 
@@ -492,7 +603,7 @@ export function PortalApp() {
       ? `${basePath}/beneficiarios`
       : `${basePath}/fichas`;
   const currentLabel = current.formKind
-    ? `Ficha: ${current.formKind}`
+    ? FICHAS.find((item) => item.kind === current.formKind)?.title ?? 'Ficha'
     : current.page === 'tracking' && !isAdmin
       ? 'Acompanhamento'
       : PAGE_LABELS[current.page];
@@ -503,7 +614,7 @@ export function PortalApp() {
   if (category) breadcrumbItems.push({ label: category, to: categoryPath });
   if (current.id && ['enrollment-detail', 'enrollment-edit', 'form'].includes(current.page)) {
     breadcrumbItems.push({
-      label: currentRecord?.beneficiary.name ?? current.id,
+      label: currentRecord?.beneficiary.name ?? 'Matrícula',
       to: `${basePath}/matriculas/${current.id}`,
     });
   }
@@ -528,7 +639,7 @@ export function PortalApp() {
               </summary>
               <div className={styles.profileDropdown}>
                 <strong>{user.email}</strong>
-                <p>Perfil: {user.role}</p>
+                <p>Perfil: {user.role === 'ADMIN' ? 'Administrador' : 'Responsável'}</p>
                 <button className={styles.smallAction} type="button" onClick={() => {
                   void signOut().then(() => window.location.assign('/')).catch((error: unknown) => showToast(error instanceof Error ? error.message : 'Não foi possível encerrar a sessão.'));
                 }}>Sair</button>
@@ -556,7 +667,7 @@ export function PortalApp() {
         </div>
       </header>
 
-      <main id="portal-content" className={styles.main}>
+      <main id="portal-content" className={styles.main} onInputCapture={clearFieldValidation} onChangeCapture={clearFieldValidation}>
         <nav className={styles.breadcrumb} aria-label="Navegação estrutural">
           {breadcrumbItems.map((item, index) => (
             <span className={styles.breadcrumbItem} key={`${item.label}-${index}`}>
@@ -567,11 +678,19 @@ export function PortalApp() {
             </span>
           ))}
         </nav>
+        {validationIssues.length > 0 && <section className={styles.validationSummary} role="alert" aria-labelledby="validation-summary-title">
+          <strong id="validation-summary-title">Revise os campos indicados antes de continuar:</strong>
+          <ul>{validationIssues.map((issue, index) => (
+            <li key={`${issue.field}-${index}`}>
+              <button type="button" onClick={() => focusValidationField(issue.field)}>{issue.message}</button>
+            </li>
+          ))}</ul>
+        </section>}
         {loadError
           ? <div className={styles.demoNotice} role="alert"><Bell size={16} /><span>{loadError}</span><button type="button" className={styles.smallAction} onClick={() => window.location.reload()}>Tentar novamente</button></div>
           : isLoading
             ? <div className={styles.demoNotice} role="status"><Bell size={16} /><span>Carregando dados atualizados…</span></div>
-            : <div className={styles.demoNotice}><Bell size={16} /><span>As solicitações de matrícula não confirmam ingresso institucional. O histórico é carregado da sua conta na API.</span></div>}
+            : <div className={styles.demoNotice}><Bell size={16} /><span>As solicitações de matrícula não confirmam ingresso institucional. Seu histórico é atualizado junto à sua conta.</span></div>}
 
         {current.page === 'home' && <Dashboard area={current.area} beneficiaries={beneficiaries} enrollments={enrollments} navigate={navigate} link={link} relatedBeneficiary={relatedBeneficiary} />}
         {current.page === 'beneficiaries' && <BeneficiaryList area={current.area} beneficiaries={current.area === 'portal' ? beneficiaries.filter((item) => item.parentId === user.id) : beneficiaries} enrollments={enrollments} link={link} navigate={navigate} />}
@@ -594,7 +713,7 @@ export function PortalApp() {
           <button type="button" className={styles.modalClose} aria-label="Fechar confirmação" onClick={() => setPendingAction(null)}><X size={20} /></button>
           <span className={styles.modalIcon}><ClipboardList size={23} /></span>
           <h2 id="confirm-title">Confirmar: {pendingAction.action}</h2>
-          <p>Esta ação atualizará o status da solicitação <strong>{pendingAction.enrollmentId}</strong>. Aprovação não significa ingresso institucional.</p>
+          <p>Esta ação atualizará o status da solicitação <strong>{enrollments.find((item) => item.id === pendingAction.enrollmentId)?.publicCode ?? 'selecionada'}</strong>. Aprovação não significa ingresso institucional.</p>
           {pendingAction.action === 'Recusar' && <label className={styles.field}>Justificativa<textarea value={reason} onChange={(event) => setReason(event.target.value)} required rows={3} placeholder="Descreva o motivo da recusa." /></label>}
           <div className={styles.modalActions}><button type="button" className={styles.buttonSecondary} onClick={() => setPendingAction(null)}>Cancelar</button><button type="button" className={styles.buttonPrimary} disabled={pendingAction.action === 'Recusar' && !reason.trim()} onClick={() => void confirmAction()}>Confirmar ação</button></div>
         </section>
@@ -628,8 +747,8 @@ function Dashboard({ area, beneficiaries, enrollments, navigate, link, relatedBe
     </div>
     <div className={styles.contentGrid}>
       <section className={styles.panel}>
-        <div className={styles.panelHeading}><div><h2>{isAdmin ? 'Solicitações recentes' : 'Atualizações recentes'}</h2><p>Movimentações carregadas da API</p></div>{link(isAdmin ? '/admin/matriculas' : '/portal/matriculas', 'Ver todas', styles.textLink)}</div>
-        <div className={styles.activityList}>{list.slice(0, 4).map((item) => <a className={styles.activityItem} href={`${isAdmin ? '/admin' : '/portal'}/matriculas/${item.id}`} key={item.id} onClick={(event) => { event.preventDefault(); navigate(`${isAdmin ? '/admin' : '/portal'}/matriculas/${item.id}`); }}><span className={styles.activityIcon}><ClipboardList size={17} /></span><span className={styles.activityText}><strong>{relatedBeneficiary(item.beneficiaryId)?.fullName ?? 'Beneficiário'}</strong><small>{item.id} · atualizado em {formatDate(item.updatedAt)}</small></span><StatusBadge status={item.status} /><ArrowRight size={16} className={styles.rowArrow} /></a>)}</div>
+        <div className={styles.panelHeading}><div><h2>{isAdmin ? 'Solicitações recentes' : 'Atualizações recentes'}</h2><p>Movimentações recentes</p></div>{link(isAdmin ? '/admin/matriculas' : '/portal/matriculas', 'Ver todas', styles.textLink)}</div>
+        <div className={styles.activityList}>{list.slice(0, 4).map((item) => <a className={styles.activityItem} href={`${isAdmin ? '/admin' : '/portal'}/matriculas/${item.id}`} key={item.id} onClick={(event) => { event.preventDefault(); navigate(`${isAdmin ? '/admin' : '/portal'}/matriculas/${item.id}`); }}><span className={styles.activityIcon}><ClipboardList size={17} /></span><span className={styles.activityText}><strong>{relatedBeneficiary(item.beneficiaryId)?.fullName ?? 'Beneficiário'}</strong><small>{item.publicCode} · atualizado em {formatDate(item.updatedAt)}</small></span><StatusBadge status={item.status} /><ArrowRight size={16} className={styles.rowArrow} /></a>)}</div>
       </section>
       <aside className={styles.panel}>
         <div className={styles.panelHeading}><div><h2>{isAdmin ? 'Atalhos administrativos' : 'Ações rápidas'}</h2><p>Acesse os fluxos principais</p></div></div>
@@ -656,7 +775,7 @@ function BeneficiaryList({ area, beneficiaries, enrollments, link, navigate }: {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('Todas');
   const filtered = beneficiaries.filter((item) =>
-    `${item.fullName} ${item.id}`.toLowerCase().includes(search.toLowerCase()) &&
+    `${item.fullName} ${item.publicCode}`.toLowerCase().includes(search.toLowerCase()) &&
     (status === 'Todas' || item.status === status),
   );
   return <>
@@ -666,7 +785,7 @@ function BeneficiaryList({ area, beneficiaries, enrollments, link, navigate }: {
       {filtered.length ? <div className={styles.tableWrap}><table><thead><tr><th>Nome</th><th>Situação cadastral</th><th>Matrícula</th><th>Atualizado em</th><th><span className={styles.visuallyHidden}>Ação</span></th></tr></thead><tbody>{filtered.map((item) => {
         const enrollment = enrollments.find((entry) => entry.beneficiaryId === item.id);
         const base = area === 'admin' ? '/admin' : '/portal';
-        return <tr key={item.id}><td><strong>{item.fullName}</strong><small>{item.id}</small></td><td><StatusBadge status={item.status} /></td><td>{enrollment ? <StatusBadge status={enrollment.status} /> : <span className={styles.muted}>Sem solicitação</span>}</td><td>{formatDate(item.updatedAt)}</td><td><a className={styles.smallAction} href={`${base}/beneficiarios/${item.id}`} onClick={(event) => { event.preventDefault(); navigate(`${base}/beneficiarios/${item.id}`); }}>Ver detalhes</a></td></tr>;
+        return <tr key={item.id}><td><strong>{item.fullName}</strong><small>{item.publicCode}</small></td><td><StatusBadge status={item.status} /></td><td>{enrollment ? <StatusBadge status={enrollment.status} /> : <span className={styles.muted}>Sem solicitação</span>}</td><td>{formatDate(item.updatedAt)}</td><td><a className={styles.smallAction} href={`${base}/beneficiarios/${item.id}`} onClick={(event) => { event.preventDefault(); navigate(`${base}/beneficiarios/${item.id}`); }}>Ver detalhes</a></td></tr>;
       })}</tbody></table></div> : <EmptyState title="Nenhum beneficiário encontrado" description="Tente outro termo de busca." />}
     </section>
   </>;
@@ -676,10 +795,10 @@ function BeneficiaryDetail({ beneficiary, enrollments, area, navigate }: { benef
   if (!beneficiary) return <EmptyState title="Beneficiário não encontrado" description="Este registro não está disponível para sua conta." action={<button className={styles.buttonSecondary} onClick={() => navigate(`/${area}/beneficiarios`)}>Voltar para beneficiários</button>} />;
   const related = enrollments.filter((item) => item.beneficiaryId === beneficiary.id);
   return <>
-    <PageTitle eyebrow={area === 'admin' ? 'Administração' : 'Área do responsável'} title={beneficiary.fullName} description={`Registro ${beneficiary.id} · atualizado em ${formatDate(beneficiary.updatedAt)}`} actions={area === 'portal' && <button className={styles.buttonPrimary} onClick={() => navigate('/portal/matriculas/nova')}><FilePlus2 size={17} /> Solicitar matrícula</button>} />
+    <PageTitle eyebrow={area === 'admin' ? 'Administração' : 'Área do responsável'} title={beneficiary.fullName} description={`${beneficiary.publicCode} · atualizado em ${formatDate(beneficiary.updatedAt)}`} actions={area === 'portal' && <button className={styles.buttonPrimary} onClick={() => navigate('/portal/matriculas/nova')}><FilePlus2 size={17} /> Solicitar matrícula</button>} />
     <div className={styles.contentGrid}>
       <section className={styles.panel}><div className={styles.panelHeading}><div><h2>Dados gerais</h2><p>Informações da solicitação vinculada</p></div><StatusBadge status={beneficiary.status} /></div><dl className={styles.detailList}><div><dt>Nome completo</dt><dd>{beneficiary.fullName}</dd></div><div><dt>Data de nascimento</dt><dd>{formatDate(beneficiary.birthDate)}</dd></div><div><dt>Situação cadastral</dt><dd>{beneficiary.status}</dd></div><div><dt>Atualização cadastral</dt><dd>{formatDate(beneficiary.updatedAt)}</dd></div><div><dt>Responsável vinculado</dt><dd>{related[0]?.parentName ?? '—'}</dd></div></dl></section>
-      <section className={styles.panel}><div className={styles.panelHeading}><div><h2>Matrículas relacionadas</h2><p>Histórico separado da situação institucional</p></div></div>{related.length ? <div className={styles.activityList}>{related.map((item) => <button className={styles.activityItem} key={item.id} onClick={() => navigate(`/${area}/matriculas/${item.id}`)}><span className={styles.activityIcon}><ClipboardList size={17} /></span><span className={styles.activityText}><strong>{item.id}</strong><small>Solicitada em {formatDate(item.requestedAt)}</small></span><StatusBadge status={item.status} /><ArrowRight size={16} className={styles.rowArrow} /></button>)}</div> : <p className={styles.helperNote}>Nenhuma solicitação de matrícula vinculada.</p>}</section>
+      <section className={styles.panel}><div className={styles.panelHeading}><div><h2>Matrículas relacionadas</h2><p>Histórico separado da situação institucional</p></div></div>{related.length ? <div className={styles.activityList}>{related.map((item) => <button className={styles.activityItem} key={item.id} onClick={() => navigate(`/${area}/matriculas/${item.id}`)}><span className={styles.activityIcon}><ClipboardList size={17} /></span><span className={styles.activityText}><strong>{item.publicCode}</strong><small>Solicitada em {formatDate(item.requestedAt)}</small></span><StatusBadge status={item.status} /><ArrowRight size={16} className={styles.rowArrow} /></button>)}</div> : <p className={styles.helperNote}>Nenhuma solicitação de matrícula vinculada.</p>}</section>
     </div>
   </>;
 }
@@ -855,7 +974,7 @@ function EnrollmentList({ area, enrollments, filteredCount, page, maxPage, query
     <PageTitle eyebrow={isAdmin ? 'Administração' : 'Área do responsável'} title="Matrículas" description={isAdmin ? 'Pesquise, filtre e acompanhe as solicitações recebidas.' : 'Acompanhe o status e as atualizações das suas solicitações.'} actions={link(`${isAdmin ? '/admin' : '/portal'}/matriculas/nova`, isAdmin ? 'Registrar matrícula' : 'Nova solicitação', styles.buttonPrimary)} />
     <section className={styles.panel}>
       <div className={styles.toolbar}><label className={styles.searchBox}><Search size={18} /><span className={styles.visuallyHidden}>Pesquisar</span><input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Buscar por pessoa ou identificador" /></label><label className={styles.filterBox}><Filter size={17} /><span className={styles.visuallyHidden}>Filtrar por status</span><select value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value); setPage(1); }}><option>Todas</option>{enrollmentStatuses.map((status) => <option key={status}>{status}</option>)}</select></label><button className={styles.sortButton} onClick={() => setSortNewest(!sortNewest)} type="button">Data {sortNewest ? '↓' : '↑'}</button><span className={styles.resultCount}>{filteredCount} solicitações</span></div>
-      {enrollments.length ? <div className={styles.tableWrap}><table><thead><tr><th>Identificador</th><th>Beneficiário</th><th>Responsável</th><th>Solicitada em</th><th>Status</th><th>Atualizada em</th><th>Ações</th></tr></thead><tbody>{enrollments.map((item) => <tr key={item.id}><td><strong>{item.id}</strong></td><td>{relatedBeneficiary(item.beneficiaryId)?.fullName ?? '—'}</td><td>{item.parentName}</td><td>{formatDate(item.requestedAt)}</td><td><StatusBadge status={item.status} /></td><td>{formatDate(item.updatedAt)}</td><td><div className={styles.rowActions}>{link(`${isAdmin ? '/admin' : '/portal'}/matriculas/${item.id}`, 'Detalhes', styles.smallAction)}{isAdmin && <select className={styles.actionSelect} aria-label={`Ação para ${item.id}`} defaultValue="" disabled={actionsFor(item.status).length === 0} onChange={(event) => { if (event.target.value) onAction(item.id, event.target.value as Action); event.target.value = ''; }}><option value="" disabled>Ação</option>{actionsFor(item.status).map((action) => <option key={action}>{action}</option>)}</select>}</div></td></tr>)}</tbody></table></div> : <EmptyState title="Nenhuma solicitação encontrada" description={filteredCount ? 'Ajuste os filtros para ver outros resultados.' : 'Quando houver solicitações, elas aparecerão nesta lista.'} />}
+      {enrollments.length ? <div className={styles.tableWrap}><table><thead><tr><th>Identificador</th><th>Beneficiário</th><th>Responsável</th><th>Solicitada em</th><th>Status</th><th>Atualizada em</th><th>Ações</th></tr></thead><tbody>{enrollments.map((item) => <tr key={item.id}><td><strong>{item.publicCode}</strong></td><td>{relatedBeneficiary(item.beneficiaryId)?.fullName ?? '—'}</td><td>{item.parentName}</td><td>{formatDate(item.requestedAt)}</td><td><StatusBadge status={item.status} /></td><td>{formatDate(item.updatedAt)}</td><td><div className={styles.rowActions}>{link(`${isAdmin ? '/admin' : '/portal'}/matriculas/${item.id}`, 'Detalhes', styles.smallAction)}{isAdmin && <select className={styles.actionSelect} aria-label={`Ação para ${item.publicCode}`} defaultValue="" disabled={actionsFor(item.status).length === 0} onChange={(event) => { if (event.target.value) onAction(item.id, event.target.value as Action); event.target.value = ''; }}><option value="" disabled>Ação</option>{actionsFor(item.status).map((action) => <option key={action}>{action}</option>)}</select>}</div></td></tr>)}</tbody></table></div> : <EmptyState title="Nenhuma solicitação encontrada" description={filteredCount ? 'Ajuste os filtros para ver outros resultados.' : 'Quando houver solicitações, elas aparecerão nesta lista.'} />}
       {filteredCount > 0 && <div className={styles.pagination}><span>Mostrando {Math.min((page - 1) * 5 + 1, filteredCount)}–{Math.min(page * 5, filteredCount)} de {filteredCount}</span><div><button type="button" aria-label="Página anterior" disabled={page <= 1} onClick={() => setPage(page - 1)}><ArrowLeft size={16} /></button><span>Página {page} de {maxPage}</span><button type="button" aria-label="Próxima página" disabled={page >= maxPage} onClick={() => setPage(page + 1)}><ArrowRight size={16} /></button></div></div>}
     </section>
   </>;
@@ -863,17 +982,12 @@ function EnrollmentList({ area, enrollments, filteredCount, page, maxPage, query
 
 function EnrollmentDetail({ enrollment, beneficiary, area, newEnrollment, record, onAction, link }: { enrollment?: Enrollment; beneficiary?: Beneficiary; area: Area; newEnrollment: boolean; record?: EnrollmentRecord; onAction: (id: string, action: Action) => void; link: (to: string, label: string, className?: string) => ReactNode }) {
   if (!enrollment) return <EmptyState title="Solicitação não encontrada" description="O identificador não corresponde a uma solicitação disponível para sua conta." action={link(area === 'admin' ? '/admin/matriculas' : '/portal/matriculas', 'Voltar para matrículas', styles.buttonSecondary)} />;
-  const anamnese = record?.anamnese;
-  const medicalFields = anamnese
-    ? Object.entries(anamnese).filter(([key, value]) =>
-      !['id', 'beneficiary_id', 'enrollment_id', 'createdAt', 'updatedAt'].includes(key) && value !== null && value !== undefined)
-    : [];
   return <>
-    <PageTitle eyebrow={area === 'admin' ? 'Análise administrativa' : 'Acompanhamento do responsável'} title={enrollment.id} description={`Solicitada em ${formatDate(enrollment.requestedAt)} · Beneficiário: ${beneficiary?.fullName ?? '—'}`} actions={<div className={styles.actionGroup}>{area === 'portal' && link('/portal/fichas', 'Continuar fichas', styles.buttonSecondary)}{link(`/${area}/matriculas/${enrollment.id}/editar`, 'Editar matrícula', styles.buttonSecondary)}{area === 'admin' && actionsFor(enrollment.status).map((action) => <button key={action} className={action === 'Recusar' ? styles.buttonDanger : styles.buttonSecondary} onClick={() => onAction(enrollment.id, action)}>{action}</button>)}</div>} />
-    {newEnrollment && <div className={styles.successBanner}><Check size={18} /><span><strong>Solicitação registrada.</strong> O identificador é {enrollment.id}; a solicitação está “{enrollment.status}”.</span></div>}
+    <PageTitle eyebrow={area === 'admin' ? 'Análise administrativa' : 'Acompanhamento do responsável'} title={enrollment.publicCode} description={`Solicitada em ${formatDate(enrollment.requestedAt)} · Beneficiário: ${beneficiary?.fullName ?? '—'}`} actions={<div className={styles.actionGroup}>{area === 'portal' && link('/portal/fichas', 'Continuar fichas', styles.buttonSecondary)}{link(`/${area}/matriculas/${enrollment.id}/editar`, 'Editar matrícula', styles.buttonSecondary)}{area === 'admin' && actionsFor(enrollment.status).map((action) => <button key={action} className={action === 'Recusar' ? styles.buttonDanger : styles.buttonSecondary} onClick={() => onAction(enrollment.id, action)}>{action}</button>)}</div>} />
+    {newEnrollment && <div className={styles.successBanner}><Check size={18} /><span><strong>Solicitação registrada.</strong> O identificador é {enrollment.publicCode}; a solicitação está “{enrollment.status}”.</span></div>}
     <div className={styles.contentGrid}>
       <section className={styles.panel}><div className={styles.panelHeading}><div><h2>Status e informações</h2><p>A aprovação não representa ingresso institucional.</p></div><StatusBadge status={enrollment.status} /></div><dl className={styles.detailList}><div><dt>Beneficiário</dt><dd>{beneficiary?.fullName ?? '—'}</dd></div><div><dt>Responsável</dt><dd>{enrollment.parentName}</dd></div><div><dt>Data da solicitação</dt><dd>{formatDate(enrollment.requestedAt)}</dd></div><div><dt>Última atualização</dt><dd>{formatDate(enrollment.updatedAt)}</dd></div>{record?.beneficiary.school && <div><dt>Escola</dt><dd>{record.beneficiary.school}</dd></div>}{record?.beneficiary.period && <div><dt>Período</dt><dd>{record.beneficiary.period}</dd></div>}{record?.beneficiary.religion && <div><dt>Religião</dt><dd>{record.beneficiary.religion}</dd></div>}{enrollment.reviewNotes && <div><dt>Observação</dt><dd>{enrollment.reviewNotes}</dd></div>}</dl></section>
-      <section className={styles.panel}><div className={styles.panelHeading}><div><h2>Histórico da solicitação</h2><p>Eventos registrados pela API</p></div></div><ol className={styles.timeline}>{enrollment.history.map((event) => <li key={event.id}><span className={styles.timelineDot} /><div><time>{formatDate(event.date)}</time><p>{event.description}</p><small>{event.author}</small></div></li>)}</ol></section>
+      <section className={styles.panel}><div className={styles.panelHeading}><div><h2>Histórico da solicitação</h2><p>Movimentações recentes</p></div></div><ol className={styles.timeline}>{enrollment.history.map((event) => <li key={event.id}><span className={styles.timelineDot} /><div><time>{formatDate(event.date)}</time><p>{event.description}</p><small>{event.author}</small></div></li>)}</ol></section>
     </div>
     <section className={styles.panel}>
       <div className={styles.panelHeading}><div><h2>Preenchimento das fichas</h2><p>Estado calculado a partir dos dados persistidos</p></div><StatusBadge status={record?.formsComplete ? 'Fichas completas' : 'Fichas pendentes'} /></div>
@@ -885,11 +999,192 @@ function EnrollmentDetail({ enrollment, beneficiary, area, newEnrollment, record
         </div>)}
       </div>
     </section>
-    {area === 'admin' && medicalFields.length > 0 && <details className={styles.panel}>
-      <summary className={styles.smallAction}>Consultar ficha de anamnese</summary>
-      <dl className={styles.detailList}>{medicalFields.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{typeof value === 'boolean' ? value ? 'Sim' : 'Não' : String(value)}</dd></div>)}</dl>
-    </details>}
+    {area === 'admin' && record && <AdminRecordDetails record={record} />}
   </>;
+}
+
+const beneficiaryLabels: Record<string, string> = {
+  publicCode: 'Código do beneficiário',
+  name: 'Nome completo',
+  birthday: 'Data de nascimento',
+  rg: 'RG',
+  cpf: 'CPF',
+  school: 'Escola',
+  period: 'Período',
+  religion: 'Religião',
+  story: 'Histórico cadastral',
+  status: 'Situação cadastral',
+};
+const parentLabels: Record<string, string> = {
+  publicCode: 'Código do responsável',
+  name: 'Nome do responsável',
+  cpf: 'CPF',
+  email: 'E-mail',
+  contact: 'Telefone',
+  profession: 'Profissão',
+  educational_level: 'Escolaridade',
+  comertial_address: 'Endereço comercial',
+  salary: 'Renda mensal',
+};
+const anamneseLabels: Record<string, string> = {
+  mainComplaintEvolution: 'Queixa principal e evolução',
+  suffersFromDisease: 'Possui alguma doença',
+  diseaseDescription: 'Descrição da doença',
+  underMedicalTreatment: 'Está em tratamento médico',
+  isPregnant: 'Gravidez',
+  usesMedication: 'Faz uso de medicação',
+  medicationDescription: 'Descrição da medicação',
+  attendingPhysicianName: 'Nome do médico assistente',
+  attendingPhysicianPhone: 'Telefone do médico assistente',
+  hasAllergies: 'Possui alergias',
+  allergiesDescription: 'Descrição das alergias',
+  hasHadSurgery: 'Já passou por cirurgia',
+  surgeriesDescription: 'Descrição das cirurgias',
+  healingProblems: 'Problemas de cicatrização',
+  anesthesiaProblems: 'Problemas com anestesia',
+  hemorrhageProblems: 'Problemas de hemorragia',
+  rheumaticFever: 'Febre reumática',
+  heartProblems: 'Problemas cardíacos',
+  kidneyProblems: 'Problemas renais',
+  gastricProblems: 'Problemas gástricos',
+  respiratoryProblems: 'Problemas respiratórios',
+  allergicProblems: 'Problemas alérgicos',
+  jointRheumatismProblems: 'Problemas articulares ou reumatismo',
+  diabetes: 'Diabetes',
+  arterialHypertension: 'Hipertensão arterial',
+  habits: 'Hábitos',
+  familyHistory: 'Antecedentes familiares',
+  otherInformation: 'Outras informações',
+  declarationAccepted: 'Declaração confirmada',
+  responsibleSignature: 'Assinatura do responsável',
+};
+const addressLabels: Record<string, string> = {
+  streetAddress: 'Logradouro',
+  house_number: 'Número',
+  neighborhood: 'Bairro',
+  landmark: 'Ponto de referência',
+  housingType: 'Tipo de moradia',
+  housingCost: 'Custo de moradia',
+  waterCost: 'Gasto com água',
+  powerCost: 'Gasto com energia elétrica',
+  foodCost: 'Gasto com alimentação',
+  gasCost: 'Gasto com gás',
+};
+const incomeLabels: Record<string, string> = {
+  nis: 'NIS',
+  totalIncome: 'Renda familiar total',
+  perCapitaIncome: 'Renda per capita',
+  hasGovernmentBenefit: 'Recebe benefício governamental',
+  benefitName: 'Nome do benefício',
+  benefitValue: 'Valor do benefício',
+};
+const enrollmentFormLabels: Record<string, Record<string, string>> = {
+  TERMO: {
+    compromisso1: 'Compromisso 1',
+    compromisso2: 'Compromisso 2',
+    irEmboraSozinho: 'Autorização para ir embora sozinho',
+    assinatura: 'Assinatura do responsável',
+  },
+  AUTORIZACAO: {
+    responsavelNome: 'Nome do responsável',
+    responsavelCpf: 'CPF do responsável',
+    menorNome: 'Nome do beneficiário',
+    menorCpf: 'CPF do beneficiário',
+    autorizaOdonto: 'Autorização para atendimento odontológico',
+    assinatura: 'Assinatura do responsável',
+  },
+  RELATOS: {
+    data: 'Data do relato',
+    relato: 'Relato',
+  },
+};
+
+function displayValue(value: unknown, key?: string): string {
+  if (typeof value === 'boolean') return value ? 'Sim' : 'Não';
+  if (value === null || value === undefined || value === '') return 'Não informado';
+  if (key === 'housingType' && typeof value === 'number' && [1, 2, 3].includes(value)) {
+    return ({ 1: 'Própria', 2: 'Cedida', 3: 'Alugada' } as Record<number, string>)[value] ?? String(value);
+  }
+  return String(value);
+}
+
+function DetailRows({ data, labels }: { data: object; labels: Record<string, string> }) {
+  const values = Object.fromEntries(Object.entries(data));
+  const rows = Object.entries(labels).filter(([key]) => key in values);
+  return rows.length
+    ? <dl className={styles.detailList}>{rows.map(([key, label]) => <div key={key}><dt>{label}</dt><dd>{displayValue(values[key], key)}</dd></div>)}</dl>
+    : <p className={styles.helperNote}>Nenhuma informação registrada nesta ficha.</p>;
+}
+
+function EnrollmentFormDetails({ form }: { form: EnrollmentRecord['forms'][number] }) {
+  const labels = enrollmentFormLabels[form.kind] ?? {};
+  const entries = Object.entries(form.data).flatMap(([key, value]) => {
+    const knownLabel = labels[key];
+    const personField = key.match(/^pessoa(\d+)(Nome|Parentesco|Tel)$/);
+    if (knownLabel) return [[knownLabel, value] as const];
+    if (!personField) return [];
+    const suffix: Record<string, string> = { Nome: 'Nome', Parentesco: 'Parentesco', Tel: 'Telefone' };
+    return [[`Pessoa autorizada ${personField[1]} - ${suffix[personField[2]]}`, value] as const];
+  });
+  return entries.length
+    ? <dl className={styles.detailList}>{entries.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{displayValue(value)}</dd></div>)}</dl>
+    : <p className={styles.helperNote}>Nenhum conteúdo registrado nesta ficha.</p>;
+}
+
+function AdminRecordDetails({ record }: { record: EnrollmentRecord }) {
+  const beneficiary = record.beneficiary;
+  const relationship = beneficiary.parent?.find((item) => item.parent_id === record.parent?.id)?.relationshipType;
+  const formProgress = new Map(record.formsStatus.map((form) => [form.kind, form]));
+  const household = beneficiary.relativies ?? [];
+  const escorts = beneficiary.AuthorizedEscorts ?? [];
+  const anamneseUpdatedAt = record.anamnese?.updatedAt;
+
+  return <section className={styles.adminRecordDetails} aria-label="Conteúdo das fichas da matrícula">
+    <h2>Fichas e dados registrados</h2>
+    <details className={styles.panel} open>
+      <summary>Ficha de matrícula</summary>
+      <h3>Beneficiário</h3>
+      <DetailRows data={beneficiary} labels={beneficiaryLabels} />
+      {beneficiary.address && <><h3>Endereço familiar</h3><DetailRows data={beneficiary.address} labels={addressLabels} /></>}
+      {beneficiary.incomeAndBenefits && <><h3>Renda e benefícios</h3><DetailRows data={beneficiary.incomeAndBenefits} labels={incomeLabels} /></>}
+      <h3>Responsável</h3>
+      {record.parent && <DetailRows data={record.parent} labels={parentLabels} />}
+      <p className={styles.helperNote}>Vínculo com o beneficiário: {relationship || 'Não informado'}</p>
+      <h3>Composição familiar</h3>
+      {household.length ? household.map((member, index) => <article className={styles.panel} key={`${String(member.name)}-${index}`}>
+        <h4>Familiar {index + 1}</h4>
+        <DetailRows data={member} labels={{ name: 'Nome', birthday: 'Data de nascimento', relation: 'Parentesco', salary: 'Renda mensal' }} />
+      </article>) : <p className={styles.helperNote}>Nenhum outro familiar informado.</p>}
+      {escorts.length > 0 && <>
+        <h3>Pessoas autorizadas</h3>
+        {escorts.map((escort, index) => <article className={styles.panel} key={`${String(escort.name)}-${index}`}>
+          <h4>Pessoa autorizada {index + 1}</h4>
+          <DetailRows data={escort} labels={{ name: 'Nome', relation: 'Vínculo', contact: 'Telefone' }} />
+        </article>)}
+      </>}
+    </details>
+    <details className={styles.panel}>
+      <summary>Ficha de anamnese</summary>
+      <FormStatusBadge status={formProgress.get('anamnese')?.status ?? 'PENDING'} />
+      <DetailRows data={record.anamnese ?? {}} labels={anamneseLabels} />
+      {typeof anamneseUpdatedAt === 'string' && <p className={styles.helperNote}>Atualizada em {new Date(anamneseUpdatedAt).toLocaleString('pt-BR')}</p>}
+    </details>
+    {record.formsStatus.filter((progress) => ['termo', 'autorizacao', 'relatos'].includes(progress.kind)).map((progress) => {
+      const form = record.forms.find((item) => item.kind === progress.kind.toUpperCase());
+      return <details className={styles.panel} key={progress.kind}>
+        <summary>{progress.title}</summary>
+        <FormStatusBadge status={progress.status} />
+        {form
+          ? <><EnrollmentFormDetails form={form} /><p className={styles.helperNote}>Atualizada em {new Date(form.updatedAt).toLocaleString('pt-BR')}</p></>
+          : <p className={styles.helperNote}>Esta ficha ainda não foi preenchida.</p>}
+      </details>;
+    })}
+    <details className={styles.panel}>
+      <summary>Aceite dos termos</summary>
+      <p>{record.termsAcceptedAt ? 'Aceito' : 'Pendente'}</p>
+      {record.termsAcceptedAt && <p className={styles.helperNote}>Aceito em {new Date(record.termsAcceptedAt).toLocaleString('pt-BR')}</p>}
+    </details>
+  </section>;
 }
 
 function FormStatusBadge({ status }: { status: string }) {
@@ -905,13 +1200,13 @@ function TrackingPage({ area, beneficiaries, enrollments, navigate }: { area: Ar
     <PageTitle eyebrow={isAdmin ? 'Administração' : 'Área do responsável'} title={isAdmin ? 'Acompanhamento de matrículas' : 'Acompanhamento'} description={isAdmin ? 'Consulte os status e o histórico das solicitações.' : 'Veja o histórico cronológico das solicitações e suas atualizações.'} />
     {isAdmin ? <section className={styles.panel}><div className={styles.tableWrap}><table><thead><tr><th>Beneficiário</th><th>Status da matrícula</th><th>Última atualização</th><th><span className={styles.visuallyHidden}>Ação</span></th></tr></thead><tbody>{records.map((beneficiary) => {
       const enrollment = enrollments.filter((item) => item.beneficiaryId === beneficiary.id).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
-      return <tr key={beneficiary.id}><td><strong>{beneficiary.fullName}</strong><small>{beneficiary.id}</small></td><td>{enrollment ? <StatusBadge status={enrollment.status} /> : <span className={styles.muted}>Sem solicitação</span>}</td><td>{formatDate(beneficiary.updatedAt)}</td><td><button className={styles.smallAction} type="button" onClick={() => navigate(`/admin/beneficiarios/${beneficiary.id}`)}>Ver histórico</button></td></tr>;
+      return <tr key={beneficiary.id}><td><strong>{beneficiary.fullName}</strong><small>{beneficiary.publicCode}</small></td><td>{enrollment ? <StatusBadge status={enrollment.status} /> : <span className={styles.muted}>Sem solicitação</span>}</td><td>{formatDate(beneficiary.updatedAt)}</td><td><button className={styles.smallAction} type="button" onClick={() => navigate(`/admin/beneficiarios/${beneficiary.id}`)}>Ver histórico</button></td></tr>;
     })}</tbody></table></div></section>
       : records.length ? <div className={styles.trackingGrid}>{enrollments.map((enrollment) => {
         const beneficiary = records.find((item) => item.id === enrollment.beneficiaryId);
         if (!beneficiary) return null;
         const latestEvent = enrollment.history[enrollment.history.length - 1];
-        return <article className={styles.panel} key={enrollment.id}><div className={styles.panelHeading}><div><h2>{beneficiary.fullName}</h2><p>{enrollment.id} · atualização em {formatDate(enrollment.updatedAt)}</p></div><StatusBadge status={enrollment.status} /></div><p className={styles.trackingUpdate}>{latestEvent?.description ?? 'Nenhuma atualização registrada.'}</p><small className={styles.muted}>Matrícula aprovada não equivale a ingresso institucional.</small><button className={styles.smallAction} type="button" onClick={() => navigate(`/portal/matriculas/${enrollment.id}`)}>Consultar histórico completo</button></article>;
+        return <article className={styles.panel} key={enrollment.id}><div className={styles.panelHeading}><div><h2>{beneficiary.fullName}</h2><p>{enrollment.publicCode} · atualização em {formatDate(enrollment.updatedAt)}</p></div><StatusBadge status={enrollment.status} /></div><p className={styles.trackingUpdate}>{latestEvent?.description ?? 'Nenhuma atualização registrada.'}</p><small className={styles.muted}>Matrícula aprovada não equivale a ingresso institucional.</small><button className={styles.smallAction} type="button" onClick={() => navigate(`/portal/matriculas/${enrollment.id}`)}>Consultar histórico completo</button></article>;
       })}</div> : <EmptyState title="Nenhuma atualização disponível" description="As atualizações aparecerão aqui após o envio de uma solicitação." />}
   </>;
 }
@@ -929,7 +1224,7 @@ function Responsibles({ beneficiaries, enrollments }: { beneficiaries: Beneficia
   return <>
     <PageTitle eyebrow="Administração" title="Responsáveis" description="Consulte os contatos vinculados às solicitações recebidas." />
     <section className={styles.panel}><div className={styles.toolbar}><label className={styles.searchBox}><Search size={18} /><span className={styles.visuallyHidden}>Pesquisar responsável</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar responsável" /></label><span className={styles.resultCount}>{filtered.length} responsáveis</span></div>
-      {filtered.length ? <div className={styles.tableWrap}><table><thead><tr><th>Responsável</th><th>Contato</th><th>Beneficiários vinculados</th><th>Matrículas</th></tr></thead><tbody>{filtered.map((parent) => <tr key={parent.id}><td><strong>{parent.name}</strong><small>{parent.id}</small></td><td>{parent.email}<small>{parent.contact}</small></td><td>{beneficiaries.filter((item) => item.parentId === parent.id).length}</td><td>{enrollments.filter((item) => item.parentId === parent.id).length}</td></tr>)}</tbody></table></div> : <EmptyState title="Nenhum responsável encontrado" description="Os responsáveis aparecem aqui quando há solicitações disponíveis." />}
+      {filtered.length ? <div className={styles.tableWrap}><table><thead><tr><th>Responsável</th><th>Contato</th><th>Beneficiários vinculados</th><th>Matrículas</th></tr></thead><tbody>{filtered.map((parent) => <tr key={parent.id}><td><strong>{parent.name}</strong><small>{enrollments.find((item) => item.parentId === parent.id)?.parentPublicCode ?? '—'}</small></td><td>{parent.email}<small>{parent.contact}</small></td><td>{beneficiaries.filter((item) => item.parentId === parent.id).length}</td><td>{enrollments.filter((item) => item.parentId === parent.id).length}</td></tr>)}</tbody></table></div> : <EmptyState title="Nenhum responsável encontrado" description="Os responsáveis aparecem aqui quando há solicitações disponíveis." />}
     </section>
   </>;
 }
@@ -945,10 +1240,10 @@ function Reports({ enrollments }: { enrollments: Enrollment[] }) {
     : 0;
   const statuses = enrollmentStatuses.map((status) => ({ status, count: enrollments.filter((item) => item.status === status).length })).filter((item) => item.count > 0);
   return <>
-    <PageTitle eyebrow="Administração" title="Relatórios" description="Indicadores calculados a partir das solicitações carregadas da API." />
+    <PageTitle eyebrow="Administração" title="Relatórios" description="Indicadores calculados com base nas solicitações." />
     <div className={styles.statsGrid}><article className={styles.statCard}><span className={styles.statIcon}><Check size={19} /></span><span className={styles.statLabel}>Solicitações aprovadas</span><strong>{accepted}</strong><small>status atual</small></article><article className={styles.statCard}><span className={styles.statIcon}><X size={19} /></span><span className={styles.statLabel}>Solicitações recusadas</span><strong>{rejected}</strong><small>status atual</small></article><article className={styles.statCard}><span className={styles.statIcon}><ClipboardList size={19} /></span><span className={styles.statLabel}>Solicitações totais</span><strong>{enrollments.length}</strong><small>todos os status</small></article><article className={styles.statCard}><span className={styles.statIcon}><Clock3 size={19} /></span><span className={styles.statLabel}>Dias até atualização</span><strong>{averageUpdateDays}</strong><small>média entre envio e atualização</small></article></div>
     <section className={styles.panel}><div className={styles.panelHeading}><div><h2>Matrículas por status</h2><p>Distribuição dos registros atuais</p></div></div>{statuses.length ? <div className={styles.reportBars}>{statuses.map((item) => <div className={styles.reportRow} key={item.status}><span>{item.status}</span><span className={styles.barTrack}><span style={{ width: `${Math.max(5, (item.count / Math.max(enrollments.length, 1)) * 100)}%` }} /></span><strong>{item.count}</strong></div>)}</div> : <p className={styles.helperNote}>Nenhuma solicitação disponível para gerar o relatório.</p>}</section>
-    <section className={`${styles.panel} ${styles.reportIngress}`}><div className={styles.panelHeading}><div><h2>Ingressos por período</h2><p>Dados institucionais não disponíveis nesta API</p></div></div><p>O status da matrícula não permite inferir ingresso na instituição.</p></section>
+    <section className={`${styles.panel} ${styles.reportIngress}`}><div className={styles.panelHeading}><div><h2>Ingressos por período</h2><p>Não há dados de ingresso institucional disponíveis.</p></div></div><p>O status da matrícula não permite inferir ingresso na instituição.</p></section>
   </>;
 }
 

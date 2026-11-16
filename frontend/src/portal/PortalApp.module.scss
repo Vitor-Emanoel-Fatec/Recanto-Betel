@@ -76,6 +76,11 @@
 .demoNotice, .successBanner { display: flex; align-items: flex-start; gap: 10px; padding: 12px 15px; color: #644d0b; border: 1px solid #f1df9c; border-radius: $radius-sm; background: #fff9e8; font-size: .79rem; line-height: 1.5; }
 .demoNotice svg, .successBanner svg { flex: 0 0 auto; margin-top: 1px; }
 .successBanner { margin-bottom: 20px; color: #245c38; border-color: #b7dfc2; background: #eff9f1; }
+.validationSummary { margin-bottom: 18px; padding: 14px 18px; color: #7d2727; border: 1px solid #e8bcbc; border-radius: $radius-sm; background: #fff6f6; font-size: .84rem; line-height: 1.55; }
+.validationSummary ul { margin: 8px 0 0; padding-left: 20px; }
+.validationSummary button { color: inherit; text-align: left; text-decoration: underline; text-underline-offset: 2px; }
+.validationSummary button:hover { color: #541919; }
+input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: #b43a3a !important; box-shadow: 0 0 0 2px rgba(180, 58, 58, .12); }
 .pageTitle { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin: 30px 0 24px; }
 .eyebrow { color: $color-navy-light; font-size: .69rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .pageTitle h1 { margin-top: 5px; font-size: clamp(1.7rem, 3vw, 2.15rem); letter-spacing: -.035em; }
@@ -177,6 +182,13 @@ td small { display: block; margin-top: 3px; color: $color-text-light; font-size:
 .detailList > div { min-width: 0; }
 .detailList dt { color: $color-text-muted; font-size: .7rem; }
 .detailList dd { margin-top: 3px; color: $color-navy; font-size: .84rem; font-weight: 700; overflow-wrap: anywhere; }
+.adminRecordDetails { display: grid; gap: 12px; margin-top: 20px; }
+.adminRecordDetails > h2 { margin: 0 0 2px; color: $color-navy; font-size: 1.15rem; }
+.adminRecordDetails details > summary { color: $color-navy; font-size: .91rem; font-weight: 750; cursor: pointer; }
+.adminRecordDetails details[open] > summary { margin-bottom: 18px; }
+.adminRecordDetails h3 { margin: 20px 0 12px; color: $color-navy; font-size: .9rem; }
+.adminRecordDetails h4 { margin-bottom: 14px; color: $color-navy; font-size: .83rem; }
+.adminRecordDetails .panel { margin-top: 12px; padding: 14px; box-shadow: none; }
 .timeline { display: grid; gap: 0; padding: 0; list-style: none; }
 .timeline li { position: relative; display: flex; gap: 12px; padding-bottom: 20px; }
 .timeline li:not(:last-child)::before { position: absolute; top: 12px; bottom: 0; left: 5px; width: 1px; content: ''; background: $color-border; }

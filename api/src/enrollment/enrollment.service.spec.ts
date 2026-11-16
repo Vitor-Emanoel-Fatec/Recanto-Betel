@@ -49,6 +49,7 @@ const submission = {
 describe('EnrollmentService', () => {
   const savedEnrollment = (status = 'PENDING') => ({
     id: 'enrollment-id',
+    publicCode: 'MAT-2026-1234567890ABCDEF',
     parent_id: 'parent-id',
     beneficiary_id: 'beneficiary-id',
     status,
@@ -60,6 +61,7 @@ describe('EnrollmentService', () => {
     updatedAt: new Date('2026-11-11T12:00:00Z'),
     parent: {
       id: 'parent-id',
+      publicCode: 'RES-2026-1234567890ABCDEF',
       name: submission.parent.name,
       cpf: submission.parent.cpf,
       email: submission.parent.email,
@@ -71,6 +73,7 @@ describe('EnrollmentService', () => {
     },
     beneficiary: {
       id: 'beneficiary-id',
+      publicCode: 'BEN-2026-1234567890ABCDEF',
       name: submission.beneficiary.name,
       birthday: new Date(submission.beneficiary.birthday),
       rg: submission.beneficiary.rg,
@@ -139,10 +142,18 @@ describe('EnrollmentService', () => {
 
     expect(prisma.$transaction).toHaveBeenCalledOnce();
     expect(transaction.parent.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ user_id: user.id, email: user.email }),
+      data: expect.objectContaining({
+        publicCode: expect.stringMatching(/^RES-\d{4}-[A-F0-9]{16}$/),
+        user_id: user.id,
+        email: user.email,
+      }),
     }));
     expect(transaction.beneficiary.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({ name: 'TESTE_BENEFICIARIO_001', status: 'PENDING' }),
+      data: expect.objectContaining({
+        publicCode: expect.stringMatching(/^BEN-\d{4}-[A-F0-9]{16}$/),
+        name: 'TESTE_BENEFICIARIO_001',
+        status: 'PENDING',
+      }),
     }));
     expect(transaction.parentBenificiary.create).toHaveBeenCalledWith({
       data: { parent_id: 'parent-id', beneficiary_id: 'beneficiary-id', relationshipType: 'mãe' },
@@ -155,6 +166,7 @@ describe('EnrollmentService', () => {
         parent_id: 'parent-id',
         beneficiary_id: 'beneficiary-id',
         status: 'PENDING',
+        publicCode: expect.stringMatching(/^MAT-\d{4}-[A-F0-9]{16}$/),
         termsAcceptedVersion: TERMS_VERSION,
         termsAcceptedAt: expect.any(Date),
       }),

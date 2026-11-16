@@ -3,6 +3,7 @@ export type EnrollmentStatus = BeneficiaryStatus;
 
 export interface Beneficiary {
   id: string;
+  publicCode: string;
   fullName: string;
   birthDate: string;
   status: BeneficiaryStatus;
@@ -29,6 +30,7 @@ export interface EnrollmentEvent {
 
 export interface Enrollment {
   id: string;
+  publicCode: string;
   beneficiaryId: string;
   parentName: string;
   status: EnrollmentStatus;

@@ -30,13 +30,28 @@ export async function signUp(email: string, password: string, termsAccepted: boo
     body: JSON.stringify({ email, password, termsAccepted }),
   });
   if (!isAuthUser(response)) {
-    throw new Error('A API retornou dados de usuário incompletos.');
+    throw new Error('Não foi possível carregar os dados da conta. Tente novamente.');
   }
   return { id: response.id, email: response.email, role: response.role };
 }
 
 export function getRegistrationTerms(): Promise<RegistrationTerms> {
-  return apiRequest<RegistrationTerms>('/auth/terms');
+  return apiRequest<unknown>('/auth/terms').then((response) => {
+    if (
+      typeof response !== 'object' ||
+      response === null ||
+      !('version' in response) ||
+      typeof response.version !== 'string' ||
+      !response.version ||
+      !('content' in response) ||
+      typeof response.content !== 'string' ||
+      !response.content.trim()
+    ) {
+      throw new Error('Os termos de cadastro retornaram em formato inválido. Tente novamente.');
+    }
+
+    return { version: response.version, content: response.content };
+  });
 }
 
 export async function signIn(email: string, password: string): Promise<AuthUser> {
@@ -46,7 +61,7 @@ export async function signIn(email: string, password: string): Promise<AuthUser>
   });
 
   if (!isAuthUser(response)) {
-    throw new Error('A API retornou dados de usuário incompletos.');
+    throw new Error('Não foi possível carregar os dados da conta. Tente novamente.');
   }
 
   return { id: response.id, email: response.email, role: response.role };
@@ -55,7 +70,7 @@ export async function signIn(email: string, password: string): Promise<AuthUser>
 export async function getCurrentUser(): Promise<AuthUser> {
   const response = await apiRequest<unknown>('/auth/me');
   if (!isAuthUser(response)) {
-    throw new Error('A API retornou dados de usuário incompletos.');
+    throw new Error('Não foi possível carregar os dados da conta. Tente novamente.');
   }
   return { id: response.id, email: response.email, role: response.role };
 }

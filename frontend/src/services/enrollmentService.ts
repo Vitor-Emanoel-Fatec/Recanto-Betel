@@ -12,6 +12,7 @@ export interface EnrollmentFormProgress {
 
 export interface EnrollmentRecord {
   id: string;
+  publicCode: string;
   status: EnrollmentStatus;
   submittedAt: string;
   updatedAt: string;
@@ -21,6 +22,7 @@ export interface EnrollmentRecord {
   anamnese?: Record<string, unknown> | null;
   beneficiary: {
     id: string;
+    publicCode: string;
     name: string;
     birthday: string;
     status: string;
@@ -39,6 +41,7 @@ export interface EnrollmentRecord {
   };
   parent?: {
     id: string;
+    publicCode: string;
     name: string;
     cpf: string;
     email: string;

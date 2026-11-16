@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronUp } from 'lucide-react';
-import { WhatsAppIcon } from './SocialIcons';
 import styles from './FloatingActions.module.scss';
 
 export const FloatingActions: React.FC = () => {

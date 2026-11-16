@@ -8,6 +8,7 @@ import { IFindBeneficiary } from './dto/beneficiary-find.dto.js';
 import { IUpdateBeneficiary } from './dto/beneficiary-update.dto.js';
 import { AnamneseService } from '../anamnese/anamnese.service.js';
 import { RelativiesService } from '../relativies/relativies.service.js';
+import { createPublicCode } from '../common/public-codes.js';
 
 @Injectable()
 export class BeneficiaryService {
@@ -23,6 +24,7 @@ export class BeneficiaryService {
             const date = new Date(data.birthday).toISOString();
             const beneficiary = await this.PrismaService.beneficiary.create({
                 data: {
+                    publicCode: createPublicCode('BEN'),
                     name: data.name,
                     birthday: date,
                     rg: data.rg,

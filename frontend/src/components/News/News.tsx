@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, ChevronRight, Clock } from 'lucide-react';
-import { NEWS_DATA, NewsItem } from '../../data/mockData';
+import { CONTACT_INFO, NEWS_DATA, NewsItem } from '../../data/mockData';
 import { Modal } from '../Common/Modal';
 import styles from './News.module.scss';
 
@@ -63,6 +63,19 @@ export const News: React.FC = () => {
             </article>
           ))}
         </div>
+
+        <section className={styles.facebookFeed} aria-labelledby="facebook-feed-title">
+          <div className={styles.facebookFeedIntro}>
+            <span className={styles.newsTag}>Rede social oficial</span>
+            <h2 id="facebook-feed-title">Acompanhe o Recanto Betel no Facebook</h2>
+            <p>Veja as publicações da página oficial e acesse cada conteúdo diretamente no Facebook.</p>
+            <a className={styles.facebookExternalLink} href={CONTACT_INFO.social.facebook} target="_blank" rel="noopener noreferrer">
+              Abrir página oficial
+            </a>
+            <p className={styles.facebookFallback}>Se as publicações não aparecerem, consulte a página oficial.</p>
+          </div>
+          <FacebookPageFeed pageUrl={CONTACT_INFO.social.facebook} />
+        </section>
       </div>
 
       {/* Modal Leitor de Notícia */}
@@ -102,3 +115,40 @@ export const News: React.FC = () => {
     </section>
   );
 };
+
+function FacebookPageFeed({ pageUrl }: { pageUrl: string }) {
+  const [isAllowed, setIsAllowed] = useState(false);
+  const embedUrl = new URL('https://www.facebook.com/plugins/page.php');
+  embedUrl.searchParams.set('href', pageUrl);
+  embedUrl.searchParams.set('tabs', 'timeline');
+  embedUrl.searchParams.set('width', '500');
+  embedUrl.searchParams.set('height', '500');
+  embedUrl.searchParams.set('small_header', 'true');
+  embedUrl.searchParams.set('adapt_container_width', 'true');
+  embedUrl.searchParams.set('hide_cover', 'true');
+  embedUrl.searchParams.set('show_facepile', 'false');
+  embedUrl.searchParams.set('locale', 'pt_BR');
+
+  return (
+    <div className={styles.facebookFeedContent}>
+      {!isAllowed ? (
+        <div className={styles.facebookConsent}>
+          <p>O conteúdo será carregado do Facebook somente após sua autorização. A Meta poderá receber informações do seu navegador.</p>
+          <button type="button" className={styles.facebookLoadButton} onClick={() => setIsAllowed(true)}>
+            Carregar publicações
+          </button>
+        </div>
+      ) : (
+        <iframe
+          className={styles.facebookIframe}
+          src={embedUrl.toString()}
+          title="Publicações da página oficial do Recanto Betel no Facebook"
+          loading="lazy"
+          scrolling="no"
+          allow="autoplay; clipboard-write; encrypted-media; picture-in-picture"
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+      )}
+    </div>
+  );
+}

@@ -497,7 +497,7 @@ export const CONTACT_INFO = {
   email: 'contato@recantobetel.org.br',
   hours: 'Segunda a Sexta, das 08:00 às 17:00',
   social: {
-    facebook: 'https://facebook.com/recantobeteltatui',
+    facebook: 'https://www.facebook.com/recantobeteltatui',
     instagram: 'https://instagram.com/recantobeteltatui',
     youtube: 'https://youtube.com/@recantobeteltatui',
   },

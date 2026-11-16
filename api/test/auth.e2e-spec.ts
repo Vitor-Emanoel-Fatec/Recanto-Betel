@@ -5,6 +5,7 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { PrismaService } from '../src/database/prisma.service.js';
+import { createValidationException } from '../src/common/validation-exception.factory.js';
 
 describe('Authentication HTTP flow (e2e)', () => {
   let app: INestApplication<App>;
@@ -52,6 +53,7 @@ describe('Authentication HTTP flow (e2e)', () => {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      exceptionFactory: createValidationException,
     }));
     await app.init();
   });
@@ -91,5 +93,28 @@ describe('Authentication HTTP flow (e2e)', () => {
       .set('Cookie', cookie[0].split(';')[0])
       .expect(200)
       .expect({ id: 'auth-e2e-user', email, role: 'USER' });
+  });
+
+  it('serves the current registration terms without authentication', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/auth/terms')
+      .expect(200);
+
+    expect(response.body.version).toMatch(/^sha256-/);
+    expect(response.body.content).toContain('normas do Projeto Samaritano');
+  });
+
+  it('returns Portuguese validation messages with field paths', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/auth/signup')
+      .send({
+        email: 'email-invalido',
+        password: 'a sufficiently long test password',
+        termsAccepted: true,
+      })
+      .expect(400);
+
+    expect(response.body.message).toEqual(['Informe um e-mail válido.']);
+    expect(response.body.fields).toEqual(['email']);
   });
 });
