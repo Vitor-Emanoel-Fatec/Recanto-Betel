@@ -171,14 +171,21 @@ export function PortalApp() {
         const mappedEnrollments = records.map((record) => toPortalEnrollment(record, fallbackParent));
         setEnrollments(mappedEnrollments);
         const mappedBeneficiaries = new Map<string, Beneficiary>();
-        records.forEach((record, index) => {
-          const mapped = toPortalBeneficiary(
-            record,
-            mappedEnrollments[index]?.parentId ?? fallbackParent.id,
-          );
-          mappedBeneficiaries.set(mapped.id, mapped);
-        });
-        setBeneficiaries([...mappedBeneficiaries.values()]);
+
+records.forEach((record, index) => {
+  const beneficiaryParentId = isAdmin
+    ? mappedEnrollments[index]?.parentId ?? fallbackParent.id
+    : (user?.id ?? '');
+
+  const mapped = toPortalBeneficiary(
+    record,
+    beneficiaryParentId
+  );
+
+  mappedBeneficiaries.set(mapped.id, mapped);
+});
+
+setBeneficiaries([...mappedBeneficiaries.values()]);
       })
       .catch((error: unknown) => {
         if (!active) return;
@@ -235,18 +242,43 @@ export function PortalApp() {
   const showToast = (message: string) => setToast(message);
 
   const replaceEnrollmentRecord = (record: EnrollmentRecord) => {
-    setApiRecords((previous) => previous.some((item) => item.id === record.id)
-      ? previous.map((item) => item.id === record.id ? record : item)
-      : [record, ...previous]);
-    const mapped = toPortalEnrollment(record, fallbackParent);
-    setEnrollments((previous) => previous.some((item) => item.id === mapped.id)
-      ? previous.map((item) => item.id === mapped.id ? mapped : item)
-      : [mapped, ...previous]);
-    const beneficiary = toPortalBeneficiary(record, mapped.parentId);
-    setBeneficiaries((previous) => previous.some((item) => item.id === beneficiary.id)
-      ? previous.map((item) => item.id === beneficiary.id ? beneficiary : item)
-      : [beneficiary, ...previous]);
-  };
+      setApiRecords((previous) =>
+        previous.some((item) => item.id === record.id)
+          ? previous.map((item) =>
+              item.id === record.id ? record : item
+            )
+          : [record, ...previous]
+      );
+
+      const mapped = toPortalEnrollment(record, fallbackParent);
+
+      setEnrollments((previous) =>
+        previous.some((item) => item.id === mapped.id)
+          ? previous.map((item) =>
+              item.id === mapped.id ? mapped : item
+            )
+          : [mapped, ...previous]
+      );
+
+      // No portal, usamos o ID do usuário logado.
+      // No administrativo, usamos o ID do responsável.
+      const beneficiaryParentId = isAdmin
+        ? mapped.parentId
+        : (user?.id ?? '');
+
+      const beneficiary = toPortalBeneficiary(
+        record,
+        beneficiaryParentId
+      );
+
+      setBeneficiaries((previous) =>
+        previous.some((item) => item.id === beneficiary.id)
+          ? previous.map((item) =>
+              item.id === beneficiary.id ? beneficiary : item
+            )
+          : [beneficiary, ...previous]
+      );
+    };
 
   const submitFicha = async (
     kind: FichaKind,
@@ -720,6 +752,8 @@ function EnrollmentForm({ area, record, onSubmit, onCancel }: {
       : '';
   };
 
+
+  
   useEffect(() => {
     setFamilyCount(Math.max(1, record?.beneficiary.relativies?.length ?? 0));
   }, [record?.id, record?.beneficiary.relativies?.length]);
