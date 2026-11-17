@@ -111,7 +111,7 @@ export const INSTITUTIONAL_INFO = {
       step: '01',
       title: 'Acolher',
       description: 'Criar espaços seguros, amorosos e inclusivos de convivência diária para crianças e adolescentes.',
-      color: '#256B9D',
+      color: '#164B91',
     },
     {
       step: '02',
@@ -129,7 +129,7 @@ export const INSTITUTIONAL_INFO = {
       step: '04',
       title: 'Transformar',
       description: 'Ampliar horizontes, preparar cidadãos conscientes e abrir novos caminhos para um futuro digno.',
-      color: '#174A6E',
+      color: '#093273',
     },
   ],
 };
@@ -331,10 +331,10 @@ export const TRANSPARENCY_FINANCIAL = {
   publicFunds2026: 'R$ 165.000,00',
   activeLegalInstruments: 3,
   expenseBreakdown: [
-    { name: 'Recursos Humanos', percent: 42, color: '#174A6E', amount: 'R$ 255.299,74' },
+    { name: 'Recursos Humanos', percent: 42, color: '#093273', amount: 'R$ 255.299,74' },
     { name: 'Segurança Alimentar', percent: 22, color: '#79B98A', amount: 'R$ 133.728,43' },
     { name: 'Material Socioeducativo', percent: 14, color: '#F4C542', amount: 'R$ 85.099,91' },
-    { name: 'Infraestrutura & Manutenção', percent: 12, color: '#256B9D', amount: 'R$ 72.942,78' },
+    { name: 'Infraestrutura & Manutenção', percent: 12, color: '#164B91', amount: 'R$ 72.942,78' },
     { name: 'Saúde & Higiene', percent: 7, color: '#38A169', amount: 'R$ 42.549,95' },
     { name: 'Administração & Auditoria', percent: 3, color: '#94A3B8', amount: 'R$ 18.235,72' },
   ],

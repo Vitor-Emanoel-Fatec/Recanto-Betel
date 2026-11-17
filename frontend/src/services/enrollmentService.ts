@@ -1,4 +1,5 @@
 import { apiRequest } from './apiClient';
+import type { BeneficiaryRecordStatus } from './beneficiaryService';
 
 export type EnrollmentStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
 export type FormProgressStatus = 'PENDING' | 'INCOMPLETE' | 'COMPLETE';
@@ -25,7 +26,8 @@ export interface EnrollmentRecord {
     publicCode: string;
     name: string;
     birthday: string;
-    status: string;
+    updatedAt: string;
+    status: BeneficiaryRecordStatus;
     cpf?: string;
     rg?: number;
     school?: string;

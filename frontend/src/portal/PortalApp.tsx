@@ -10,7 +10,9 @@ import {
 import { FICHAS, FichaPage, FichasHub, isFichaKind } from './PortalForms';
 import { useAuth } from '../services/AuthContext';
 import { getRegistrationTerms, type RegistrationTerms } from '../services/authService';
+import { listMyBeneficiaries, type BeneficiaryRecord } from '../services/beneficiaryService';
 import { ApiError } from '../services/apiClient';
+import logoRecanto from '../assets/Logo-Recanto.svg';
 import {
   createAnamnese,
   decideEnrollment,
@@ -139,7 +141,11 @@ const apiStatus = (status: ApiEnrollmentStatus): EnrollmentStatus => ({
   REJECTED: 'Recusada',
 } satisfies Record<ApiEnrollmentStatus, EnrollmentStatus>)[status];
 
-function toPortalEnrollment(record: EnrollmentRecord, fallbackParent: { id: string; email: string }): PortalEnrollment {
+function toPortalEnrollment(
+  record: EnrollmentRecord,
+  fallbackParent: { id: string; email: string },
+  parentIdOverride?: string,
+): PortalEnrollment {
   const parentName = record.parent?.name ?? fallbackParent.email;
   const history: EnrollmentEvent[] = record.history.map((event) => ({
     id: event.id,
@@ -157,7 +163,7 @@ function toPortalEnrollment(record: EnrollmentRecord, fallbackParent: { id: stri
     publicCode: record.publicCode,
     beneficiaryId: record.beneficiary.id,
     parentName,
-    parentId: record.parent?.id ?? fallbackParent.id,
+    parentId: parentIdOverride ?? record.parent?.id ?? fallbackParent.id,
     parentPublicCode: record.parent?.publicCode ?? '',
     parentEmail: record.parent?.email ?? fallbackParent.email,
     parentContact: record.parent?.contact ?? '',
@@ -175,7 +181,27 @@ function toPortalBeneficiary(record: EnrollmentRecord, parentId: string): Benefi
     publicCode: record.beneficiary.publicCode,
     fullName: record.beneficiary.name,
     birthDate: record.beneficiary.birthday.slice(0, 10),
-    status: apiStatus(record.status),
+    status: apiBeneficiaryStatus(record.beneficiary.status),
+    updatedAt: record.beneficiary.updatedAt.slice(0, 10),
+    parentId,
+  };
+}
+
+function apiBeneficiaryStatus(status: BeneficiaryRecord['status']): Beneficiary['status'] {
+  return ({
+    PENDING: 'Em análise',
+    APPROVED: 'Aprovada',
+    REJECTED: 'Recusada',
+  } satisfies Record<BeneficiaryRecord['status'], Beneficiary['status']>)[status];
+}
+
+function toPortalBeneficiaryRecord(record: BeneficiaryRecord, parentId: string): Beneficiary {
+  return {
+    id: record.id,
+    publicCode: record.publicCode,
+    fullName: record.name,
+    birthDate: record.birthday.slice(0, 10),
+    status: apiBeneficiaryStatus(record.status),
     updatedAt: record.updatedAt.slice(0, 10),
     parentId,
   };
@@ -237,12 +263,19 @@ export function PortalApp() {
     let active = true;
     setIsLoading(true);
     setLoadError('');
-    const request = isAdmin ? listEnrollments() : listMyEnrollments();
+    const request = isAdmin
+      ? listEnrollments().then((records) => ({ records, ownBeneficiaries: null }))
+      : Promise.all([listMyEnrollments(), listMyBeneficiaries()])
+        .then(([records, ownBeneficiaries]) => ({ records, ownBeneficiaries }));
     request
-      .then((records) => {
+      .then(({ records, ownBeneficiaries }) => {
         if (!active) return;
         setApiRecords(records);
-        const mappedEnrollments = records.map((record) => toPortalEnrollment(record, fallbackParent));
+        const mappedEnrollments = records.map((record) => toPortalEnrollment(
+          record,
+          fallbackParent,
+          isAdmin ? undefined : fallbackParent.id,
+        ));
         setEnrollments(mappedEnrollments);
         const mappedBeneficiaries = new Map<string, Beneficiary>();
         records.forEach((record, index) => {
@@ -250,6 +283,10 @@ export function PortalApp() {
             record,
             mappedEnrollments[index]?.parentId ?? fallbackParent.id,
           );
+          mappedBeneficiaries.set(mapped.id, mapped);
+        });
+        ownBeneficiaries?.forEach((record) => {
+          const mapped = toPortalBeneficiaryRecord(record, fallbackParent.id);
           mappedBeneficiaries.set(mapped.id, mapped);
         });
         setBeneficiaries([...mappedBeneficiaries.values()]);
@@ -329,7 +366,11 @@ export function PortalApp() {
     setApiRecords((previous) => previous.some((item) => item.id === record.id)
       ? previous.map((item) => item.id === record.id ? record : item)
       : [record, ...previous]);
-    const mapped = toPortalEnrollment(record, fallbackParent);
+    const mapped = toPortalEnrollment(
+      record,
+      fallbackParent,
+      isAdmin ? undefined : fallbackParent.id,
+    );
     setEnrollments((previous) => previous.some((item) => item.id === mapped.id)
       ? previous.map((item) => item.id === mapped.id ? mapped : item)
       : [mapped, ...previous]);
@@ -626,7 +667,7 @@ export function PortalApp() {
       <header className={styles.header}>
         <div className={styles.headerTop}>
           <a className={styles.brand} href="/" aria-label="Recanto Betel — página inicial">
-            <span className={styles.brandMark}><Heart size={20} fill="currentColor" /></span>
+            <img className={styles.brandMark} src={logoRecanto} alt="" aria-hidden="true" />
             <span><small>ASSOCIAÇÃO</small><strong>Recanto Betel</strong></span>
           </a>
           <div className={styles.headerRight}>
@@ -981,6 +1022,7 @@ function EnrollmentList({ area, enrollments, filteredCount, page, maxPage, query
 }
 
 function EnrollmentDetail({ enrollment, beneficiary, area, newEnrollment, record, onAction, link }: { enrollment?: Enrollment; beneficiary?: Beneficiary; area: Area; newEnrollment: boolean; record?: EnrollmentRecord; onAction: (id: string, action: Action) => void; link: (to: string, label: string, className?: string) => ReactNode }) {
+  const [expandedForm, setExpandedForm] = useState<{ enrollmentId: string; kind: string } | null>(null);
   if (!enrollment) return <EmptyState title="Solicitação não encontrada" description="O identificador não corresponde a uma solicitação disponível para sua conta." action={link(area === 'admin' ? '/admin/matriculas' : '/portal/matriculas', 'Voltar para matrículas', styles.buttonSecondary)} />;
   return <>
     <PageTitle eyebrow={area === 'admin' ? 'Análise administrativa' : 'Acompanhamento do responsável'} title={enrollment.publicCode} description={`Solicitada em ${formatDate(enrollment.requestedAt)} · Beneficiário: ${beneficiary?.fullName ?? '—'}`} actions={<div className={styles.actionGroup}>{area === 'portal' && link('/portal/fichas', 'Continuar fichas', styles.buttonSecondary)}{link(`/${area}/matriculas/${enrollment.id}/editar`, 'Editar matrícula', styles.buttonSecondary)}{area === 'admin' && actionsFor(enrollment.status).map((action) => <button key={action} className={action === 'Recusar' ? styles.buttonDanger : styles.buttonSecondary} onClick={() => onAction(enrollment.id, action)}>{action}</button>)}</div>} />
@@ -992,14 +1034,36 @@ function EnrollmentDetail({ enrollment, beneficiary, area, newEnrollment, record
     <section className={styles.panel}>
       <div className={styles.panelHeading}><div><h2>Preenchimento das fichas</h2><p>Estado calculado a partir dos dados persistidos</p></div><StatusBadge status={record?.formsComplete ? 'Fichas completas' : 'Fichas pendentes'} /></div>
       <div className={styles.activityList}>
-        {record?.formsStatus.map((form) => <div className={styles.activityItem} key={form.kind}>
-          <span className={styles.activityIcon}>{form.status === 'COMPLETE' ? <Check size={17} /> : <Clock3 size={17} />}</span>
-          <span className={styles.activityText}><strong>{form.title}</strong><small>{form.required ? 'Obrigatória' : 'Opcional'}</small></span>
-          <FormStatusBadge status={form.status} />
-        </div>)}
+        {record?.formsStatus.map((form) => {
+          const isExpanded = expandedForm?.enrollmentId === enrollment.id && expandedForm.kind === form.kind;
+          const content = <>
+            <span className={styles.activityIcon}>{form.status === 'COMPLETE' ? <Check size={17} /> : <Clock3 size={17} />}</span>
+            <span className={styles.activityText}><strong>{form.title}</strong><small>{form.required ? 'Obrigatória' : 'Opcional'}</small></span>
+            <FormStatusBadge status={form.status} />
+          </>;
+          return area === 'admin'
+            ? <button
+                className={`${styles.activityItem} ${styles.formProgressButton}`}
+                key={form.kind}
+                type="button"
+                aria-expanded={isExpanded}
+                aria-controls={isExpanded ? `registered-form-${enrollment.id}-${form.kind}` : undefined}
+                onClick={() => setExpandedForm(isExpanded ? null : { enrollmentId: enrollment.id, kind: form.kind })}
+              >
+                {content}
+                <ChevronDown className={`${styles.formProgressChevron} ${isExpanded ? styles.formProgressChevronOpen : ''}`} size={17} aria-hidden="true" />
+              </button>
+            : <div className={styles.activityItem} key={form.kind}>{content}</div>;
+        })}
       </div>
+      {area === 'admin' && record && expandedForm?.enrollmentId === enrollment.id && (
+        <AdminRecordDetails
+          record={record}
+          kind={expandedForm.kind}
+          id={`registered-form-${enrollment.id}-${expandedForm.kind}`}
+        />
+      )}
     </section>
-    {area === 'admin' && record && <AdminRecordDetails record={record} />}
   </>;
 }
 
@@ -1131,18 +1195,18 @@ function EnrollmentFormDetails({ form }: { form: EnrollmentRecord['forms'][numbe
     : <p className={styles.helperNote}>Nenhum conteúdo registrado nesta ficha.</p>;
 }
 
-function AdminRecordDetails({ record }: { record: EnrollmentRecord }) {
+function AdminRecordDetails({ record, kind, id }: { record: EnrollmentRecord; kind: string; id: string }) {
   const beneficiary = record.beneficiary;
   const relationship = beneficiary.parent?.find((item) => item.parent_id === record.parent?.id)?.relationshipType;
   const formProgress = new Map(record.formsStatus.map((form) => [form.kind, form]));
   const household = beneficiary.relativies ?? [];
   const escorts = beneficiary.AuthorizedEscorts ?? [];
   const anamneseUpdatedAt = record.anamnese?.updatedAt;
+  const title = record.formsStatus.find((form) => form.kind === kind)?.title ?? 'Ficha';
 
-  return <section className={styles.adminRecordDetails} aria-label="Conteúdo das fichas da matrícula">
-    <h2>Fichas e dados registrados</h2>
-    <details className={styles.panel} open>
-      <summary>Ficha de matrícula</summary>
+  return <section className={styles.adminRecordDetails} id={id} role="region" aria-label={`Dados: ${title}`}>
+    <h3>{title}</h3>
+    {kind === 'matricula' && <>
       <h3>Beneficiário</h3>
       <DetailRows data={beneficiary} labels={beneficiaryLabels} />
       {beneficiary.address && <><h3>Endereço familiar</h3><DetailRows data={beneficiary.address} labels={addressLabels} /></>}
@@ -1162,28 +1226,27 @@ function AdminRecordDetails({ record }: { record: EnrollmentRecord }) {
           <DetailRows data={escort} labels={{ name: 'Nome', relation: 'Vínculo', contact: 'Telefone' }} />
         </article>)}
       </>}
-    </details>
-    <details className={styles.panel}>
-      <summary>Ficha de anamnese</summary>
+    </>}
+    {kind === 'anamnese' && <>
       <FormStatusBadge status={formProgress.get('anamnese')?.status ?? 'PENDING'} />
       <DetailRows data={record.anamnese ?? {}} labels={anamneseLabels} />
       {typeof anamneseUpdatedAt === 'string' && <p className={styles.helperNote}>Atualizada em {new Date(anamneseUpdatedAt).toLocaleString('pt-BR')}</p>}
-    </details>
-    {record.formsStatus.filter((progress) => ['termo', 'autorizacao', 'relatos'].includes(progress.kind)).map((progress) => {
-      const form = record.forms.find((item) => item.kind === progress.kind.toUpperCase());
-      return <details className={styles.panel} key={progress.kind}>
-        <summary>{progress.title}</summary>
-        <FormStatusBadge status={progress.status} />
+    </>}
+    {kind === 'termos' && <>
+      <p>{record.termsAcceptedAt ? 'Aceito' : 'Pendente'}</p>
+      {record.termsAcceptedAt && <p className={styles.helperNote}>Aceito em {new Date(record.termsAcceptedAt).toLocaleString('pt-BR')}</p>}
+      {record.termsAcceptedVersion && <p className={styles.helperNote}>Versão aceita: {record.termsAcceptedVersion}</p>}
+    </>}
+    {['termo', 'autorizacao', 'relatos'].includes(kind) && (() => {
+      const form = record.forms.find((item) => item.kind === kind.toUpperCase());
+      const status = formProgress.get(kind)?.status ?? 'PENDING';
+      return <>
+        <FormStatusBadge status={status} />
         {form
           ? <><EnrollmentFormDetails form={form} /><p className={styles.helperNote}>Atualizada em {new Date(form.updatedAt).toLocaleString('pt-BR')}</p></>
           : <p className={styles.helperNote}>Esta ficha ainda não foi preenchida.</p>}
-      </details>;
-    })}
-    <details className={styles.panel}>
-      <summary>Aceite dos termos</summary>
-      <p>{record.termsAcceptedAt ? 'Aceito' : 'Pendente'}</p>
-      {record.termsAcceptedAt && <p className={styles.helperNote}>Aceito em {new Date(record.termsAcceptedAt).toLocaleString('pt-BR')}</p>}
-    </details>
+      </>;
+    })()}
   </section>;
 }
 

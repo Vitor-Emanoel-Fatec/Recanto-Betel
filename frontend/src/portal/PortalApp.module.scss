@@ -23,7 +23,7 @@
   z-index: 10;
   top: 0;
   background: $color-white;
-  box-shadow: 0 2px 12px rgba(13, 43, 64, .07);
+  box-shadow: 0 2px 12px rgba(6, 30, 70, .07);
 }
 
 .headerTop, .navRow {
@@ -38,13 +38,9 @@
 .headerTop { min-height: 76px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; }
 .brandMark {
-  display: grid;
-  width: 42px;
+  width: 50px;
   height: 42px;
-  color: $color-gold;
-  border-radius: 50%;
-  background: $color-navy;
-  place-items: center;
+  object-fit: contain;
 }
 .brand span:last-child { display: grid; line-height: 1.15; }
 .brand small { color: $color-text-muted; font-size: .62rem; font-weight: 700; letter-spacing: .1em; }
@@ -120,6 +116,9 @@ input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="
 .textLink, .smallAction { color: $color-navy-light; font-size: .78rem; font-weight: 750; white-space: nowrap; &:hover { text-decoration: underline; } }
 .activityList { display: grid; }
 .activityItem { display: flex; min-width: 0; align-items: center; gap: 11px; padding: 13px 0; border-top: 1px solid $color-border-light; }
+.formProgressButton { width: 100%; color: inherit; border-right: 0; border-bottom: 0; border-left: 0; background: transparent; font: inherit; text-align: left; cursor: pointer; &:hover { background: $color-surface-hover; } &:focus-visible { outline: 2px solid $color-navy-light; outline-offset: 2px; } }
+.formProgressChevron { flex: 0 0 auto; color: $color-text-light; transition: transform .18s ease; }
+.formProgressChevronOpen { transform: rotate(180deg); }
 .activityIcon { display: grid; width: 36px; height: 36px; flex: 0 0 auto; color: $color-navy-light; border-radius: 10px; background: $color-navy-subtle; place-items: center; }
 .activityText { display: grid; min-width: 0; flex: 1; gap: 3px; }
 .activityText strong { overflow: hidden; color: $color-navy; font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
@@ -182,11 +181,9 @@ td small { display: block; margin-top: 3px; color: $color-text-light; font-size:
 .detailList > div { min-width: 0; }
 .detailList dt { color: $color-text-muted; font-size: .7rem; }
 .detailList dd { margin-top: 3px; color: $color-navy; font-size: .84rem; font-weight: 700; overflow-wrap: anywhere; }
-.adminRecordDetails { display: grid; gap: 12px; margin-top: 20px; }
-.adminRecordDetails > h2 { margin: 0 0 2px; color: $color-navy; font-size: 1.15rem; }
-.adminRecordDetails details > summary { color: $color-navy; font-size: .91rem; font-weight: 750; cursor: pointer; }
-.adminRecordDetails details[open] > summary { margin-bottom: 18px; }
+.adminRecordDetails { display: grid; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid $color-border-light; }
 .adminRecordDetails h3 { margin: 20px 0 12px; color: $color-navy; font-size: .9rem; }
+.adminRecordDetails > h3 { margin: 0; color: $color-navy; font-size: .95rem; }
 .adminRecordDetails h4 { margin-bottom: 14px; color: $color-navy; font-size: .83rem; }
 .adminRecordDetails .panel { margin-top: 12px; padding: 14px; box-shadow: none; }
 .timeline { display: grid; gap: 0; padding: 0; list-style: none; }

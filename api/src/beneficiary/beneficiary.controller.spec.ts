@@ -5,4 +5,9 @@ describe('BeneficiaryController', () => {
     expect(Reflect.getMetadata('__guards__', BeneficiaryController)).toHaveLength(2);
     expect(Reflect.getMetadata('roles', BeneficiaryController)).toEqual(['ADMIN']);
   });
+
+  it('allows authenticated users to list only their linked beneficiaries', () => {
+    expect(Reflect.getMetadata('roles', BeneficiaryController.prototype.listMine))
+      .toEqual(['USER', 'PARENT']);
+  });
 });

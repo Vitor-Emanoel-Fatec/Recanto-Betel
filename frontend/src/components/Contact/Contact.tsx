@@ -127,7 +127,7 @@ export const Contact: React.FC<ContactProps> = ({ onShowToast }) => {
 
             {/* Redes Sociais */}
             <div>
-              <strong style={{ display: 'block', fontSize: '0.85rem', color: '#174A6E', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>
+              <strong style={{ display: 'block', fontSize: '0.85rem', color: '#093273', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>
                 Nossas Redes Sociais
               </strong>
               <div className={styles.socialRow}>
@@ -173,7 +173,7 @@ export const Contact: React.FC<ContactProps> = ({ onShowToast }) => {
             {/* Card Azul Claro de Localização */}
             <div className={styles.locationCard}>
               <div className={styles.locHeader}>
-                <MapPin size={22} color="#174A6E" />
+                <MapPin size={22} color="#093273" />
                 <span>Localização no Bairro Valinho</span>
               </div>
               <p className={styles.locAddress}>

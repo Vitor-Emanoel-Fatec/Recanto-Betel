@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Heart, Menu, X, ChevronRight } from 'lucide-react';
 import { AuthPopover } from './AuthPopover';
 import styles from './Header.module.scss';
+import logoRecanto from '../../assets/Logo-Recanto.svg';
+import supportEffect from '../../assets/Effect.svg';
 
 interface HeaderProps {
   onOpenSupportModal?: () => void;
@@ -58,11 +60,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSupportModal }) => {
   return (
     <header className={`${styles.header} ${isScrolled ? styles['header--scrolled'] : ''}`}>
       <div className={styles.inner}>
-        {/* Esquerda: Logo com ícone de coração e texto */}
+        {/* Esquerda: logo institucional */}
         <a href="#inicio" className={styles.logo} onClick={(e) => { e.preventDefault(); handleNavClick('#inicio'); }}>
-          <div className={styles.logoIconWrapper} aria-hidden="true">
-            <Heart className={styles.heartIcon} size={22} fill="#F4C542" />
-          </div>
+          <img className={styles.logoImage} src={logoRecanto} alt="" aria-hidden="true" />
           <div className={styles.logoTextGroup}>
             <span className={styles.associationPrefix}>ASSOCIAÇÃO</span>
             <span className={styles.brandName}>Recanto Betel</span>
@@ -102,6 +102,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSupportModal }) => {
             }}
             id="nav-apoie-btn"
           >
+            <img className={styles.supportEffect} src={supportEffect} alt="" aria-hidden="true" />
             <Heart className={styles.heartOutline} size={18} strokeWidth={2.5} />
             <span>Apoie o Recanto</span>
           </button>
@@ -135,7 +136,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSupportModal }) => {
                 }}
               >
                 <span>{item.label}</span>
-                <ChevronRight size={18} color="#174A6E" />
+                <ChevronRight size={18} color="#093273" />
               </a>
             </li>
           ))}

@@ -96,11 +96,11 @@ export const News: React.FC = () => {
 
             <div className={styles.articleMetaRow}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Calendar size={16} color="#174A6E" />
+                <Calendar size={16} color="#093273" />
                 <span>{selectedArticle.date}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Clock size={16} color="#174A6E" />
+                <Clock size={16} color="#093273" />
                 <span>{selectedArticle.readTime}</span>
               </div>
             </div>

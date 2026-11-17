@@ -9,6 +9,7 @@ import { IUpdateBeneficiary } from './dto/beneficiary-update.dto.js';
 import { AnamneseService } from '../anamnese/anamnese.service.js';
 import { RelativiesService } from '../relativies/relativies.service.js';
 import { createPublicCode } from '../common/public-codes.js';
+import type { AuthenticatedUser } from '../auth/authenticated-user.js';
 
 @Injectable()
 export class BeneficiaryService {
@@ -107,6 +108,27 @@ export class BeneficiaryService {
         } catch(E: any) {
             throw new InternalServerErrorException("Erro ao tentar encontrar beneficiário");
         }
+    }
+
+    async listMine(user: AuthenticatedUser) {
+        const parent = await this.PrismaService.parent.findUnique({
+            where: { user_id: user.id },
+            select: { id: true },
+        });
+        if (!parent) return [];
+
+        return this.PrismaService.beneficiary.findMany({
+            where: { parent: { some: { parent_id: parent.id } } },
+            select: {
+                id: true,
+                publicCode: true,
+                name: true,
+                birthday: true,
+                status: true,
+                updatedAt: true,
+            },
+            orderBy: { updatedAt: 'desc' },
+        });
     }
 
     async updateBeneficiary(id: string, data: IUpdateBeneficiary): Promise<void> {

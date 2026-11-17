@@ -31,6 +31,7 @@ const enrollmentDetailsInclude = {
   parent: {
     select: {
       id: true,
+      publicCode: true,
       name: true,
       cpf: true,
       email: true,

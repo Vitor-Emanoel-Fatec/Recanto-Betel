@@ -91,7 +91,7 @@ export const Services: React.FC = () => {
             className="btn-primary"
             style={{
               backgroundColor: '#F4C542',
-              color: '#0D2B40',
+              color: '#061E46',
               fontWeight: 700,
               padding: '12px 24px',
               borderRadius: '9999px',
@@ -128,7 +128,7 @@ export const Services: React.FC = () => {
                 style={{
                   fontSize: '1rem',
                   fontWeight: 700,
-                  color: '#174A6E',
+                  color: '#093273',
                   marginBottom: '10px',
                 }}
               >

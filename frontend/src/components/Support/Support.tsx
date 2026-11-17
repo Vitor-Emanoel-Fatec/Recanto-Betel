@@ -199,7 +199,7 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
             }}
           >
             {/* SVG Simulado de QR Code Pix */}
-            <svg width="160" height="160" viewBox="0 0 100 100" fill="#0D2B40">
+            <svg width="160" height="160" viewBox="0 0 100 100" fill="#061E46">
               <rect width="30" height="30" x="5" y="5" rx="3" />
               <rect width="20" height="20" x="10" y="10" fill="#FFFFFF" />
               <rect width="10" height="10" x="15" y="15" />
@@ -228,8 +228,8 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
               fontFamily: 'monospace',
               fontWeight: 700,
               fontSize: '1rem',
-              color: '#174A6E',
-              backgroundColor: '#EDF5FA',
+              color: '#093273',
+              backgroundColor: '#EDF2F9',
               padding: '8px 14px',
               borderRadius: '8px',
               marginBottom: '16px',
@@ -243,7 +243,7 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
             onClick={copyPixKey}
             style={{
               backgroundColor: '#F4C542',
-              color: '#0D2B40',
+              color: '#061E46',
               fontWeight: 700,
               padding: '12px 24px',
               borderRadius: '9999px',
@@ -350,7 +350,7 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
               gap: '12px',
             }}
           >
-            <strong style={{ fontSize: '15px', color: '#174A6E' }}>
+            <strong style={{ fontSize: '15px', color: '#093273' }}>
               Cadastro Oficial de Voluntários
             </strong>
             <p style={{ fontSize: '14px', lineHeight: '1.5', margin: 0, color: '#132E43' }}>
@@ -402,7 +402,7 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
               border: '1px solid #E2E8F0',
             }}
           >
-            <strong style={{ color: '#174A6E', fontSize: '15px' }}>
+            <strong style={{ color: '#093273', fontSize: '15px' }}>
               Como você pode contribuir como associado(a):
             </strong>
             <ul
@@ -436,7 +436,7 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
               gap: '12px',
             }}
           >
-            <strong style={{ fontSize: '15px', color: '#174A6E' }}>
+            <strong style={{ fontSize: '15px', color: '#093273' }}>
               Ficha de Cadastro de Associados
             </strong>
             <p style={{ fontSize: '14px', lineHeight: '1.5', margin: 0, color: '#132E43' }}>
