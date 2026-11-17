@@ -74,14 +74,14 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
                 <Copy size={16} />
                 <span>Copiar chave Pix</span>
               </button>
-              <button
+              {/* <button
                 type="button"
                 className={`${styles.btnAction} ${styles['btnAction--outline']}`}
                 onClick={() => setQrModalOpen(true)}
               >
                 <QrCode size={16} />
                 <span>Ver QR Code</span>
-              </button>
+              </button> */}
             </div>
           </div>
 

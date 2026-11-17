@@ -120,14 +120,14 @@ export const DonationModal: React.FC<DonationModalProps> = ({
             lineHeight: '1.5',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', fontWeight: 700 }}>
+          {/* <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', fontWeight: 700 }}>
             <ShieldCheck size={18} color="#164B91" />
             <span>Dados da Conta Bancária Institucional:</span>
           </div>
           <div><strong>Favorecido:</strong> Associação Recanto Betel</div>
           <div><strong>CNPJ:</strong> 47.818.778/0001-76</div>
           <div><strong>Banco:</strong> Banco do Brasil (001)</div>
-          <div><strong>Agência:</strong> 0325-5 · <strong>Conta Corrente:</strong> 14.520-8</div>
+          <div><strong>Agência:</strong> 0325-5 · <strong>Conta Corrente:</strong> 14.520-8</div> */}
         </div>
       </div>
     </Modal>

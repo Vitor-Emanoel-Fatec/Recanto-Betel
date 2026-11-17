@@ -153,7 +153,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background-color: transparent;
+  background-color: $color-gold;
   color: $color-navy;
   font-size: 0.9375rem;
   font-weight: 700;
@@ -162,7 +162,7 @@
   box-shadow: none;
   transition: all 0.25s ease;
   text-decoration: none;
-  border: 1px solid $color-navy;
+  border: 1px solid transparent;
   white-space: nowrap;
 
   .supportEffect {
