@@ -131,6 +131,47 @@
   gap: 14px;
 }
 
+.termsText {
+  padding: 12px;
+  color: $color-text-muted;
+  border: 1px solid $color-border;
+  border-radius: $radius-sm;
+  background: $color-bg;
+  font-size: .75rem;
+  line-height: 1.5;
+
+  small {
+    display: block;
+    margin-top: 7px;
+    font-weight: 700;
+  }
+}
+
+.termsAcceptance {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: $color-text;
+  font-size: .8rem;
+  line-height: 1.45;
+
+  input {
+    flex: 0 0 auto;
+    width: 17px;
+    height: 17px;
+    margin-top: 1px;
+    accent-color: $color-navy;
+  }
+}
+
+.termsRetryButton {
+  color: $color-navy;
+  font-size: .75rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .field {
   display: grid;
   gap: 6px;

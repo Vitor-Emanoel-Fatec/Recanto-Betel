@@ -1,31 +1,72 @@
-import { 
+import {
+  Body,
   Controller,
-  Post,
+  Get,
   HttpCode,
   HttpStatus,
-  Body,
-  Res
+  Post,
+  Req,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
-import { AuthService } from './auth.service.js';
-import type { ICreateUser } from '../user/dto/user-create.dto.js';
 import type { Response } from 'express';
-import type { IFindCredentials } from '../user/dto/user-findCredentials.dto.js';
+import { AuthService } from './auth.service.js';
+import { JwtAuthGuard } from './jwt-auth.guard.js';
+import type { AuthenticatedRequest } from './authenticated-user.js';
+import { ICreateUser } from '../user/dto/user-create.dto.js';
+import { IFindCredentials } from '../user/dto/user-findCredentials.dto.js';
+import { TERMS_CONTENT, TERMS_VERSION } from './terms.js';
+
+const COOKIE_NAME = 'recanto_access';
+const COOKIE_MAX_AGE = 15 * 60 * 1000;
+
+function cookieOptions() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: COOKIE_MAX_AGE,
+  };
+}
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService){};
+  constructor(private readonly authService: AuthService) {}
 
-  @Post("signup")
-  @HttpCode(HttpStatus.CREATED)
-  async signup(@Body() data: ICreateUser, @Res() response: Response): Promise<void>{
-    const result = await this.authService.signup(data);
-    response.json(result);
+  @Get('terms')
+  terms() {
+    return { version: TERMS_VERSION, content: TERMS_CONTENT };
   }
 
-  @Post("signin")
+  @Post('signup')
+  @HttpCode(HttpStatus.CREATED)
+  signup(@Body() data: ICreateUser) {
+    return this.authService.signup(data);
+  }
+
+  @Post('signin')
   @HttpCode(HttpStatus.OK)
-  async signin(@Body() data: IFindCredentials, @Res() response: Response): Promise<void>{
+  async signin(@Body() data: IFindCredentials, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.signin(data);
-    response.json(result);
+    response.cookie(COOKIE_NAME, result.accessToken, cookieOptions());
+    return { id: result.id, email: result.email, role: result.role };
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  me(@Req() request: AuthenticatedRequest) {
+    return this.authService.getCurrentUser(request.user.id);
+  }
+
+  @Post('signout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  signout(@Res({ passthrough: true }) response: Response) {
+    response.clearCookie(COOKIE_NAME, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
   }
 }

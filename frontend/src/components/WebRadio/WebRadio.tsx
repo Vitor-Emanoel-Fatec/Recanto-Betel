@@ -60,7 +60,7 @@ export const WebRadio: React.FC = () => {
                   onClick={togglePlay}
                   aria-label={isPlaying ? 'Pausar Web Rádio' : 'Ouvir Web Rádio ao vivo'}
                 >
-                  {isPlaying ? <Pause size={22} fill="#0D2B40" /> : <Play size={22} fill="#0D2B40" />}
+                  {isPlaying ? <Pause size={22} fill="#061E46" /> : <Play size={22} fill="#061E46" />}
                 </button>
 
                 <div className={styles.volumeControl}>

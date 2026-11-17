@@ -1,6 +1,7 @@
 import React from 'react';
-import { MapPin, Heart, ArrowRight, Award } from 'lucide-react';
+import { MapPin, Heart, ArrowRight } from 'lucide-react';
 import styles from './Hero.module.scss';
+import supportEffect from '../../assets/Effect.svg';
 
 interface HeroProps {
   onOpenSupportModal?: () => void;
@@ -53,16 +54,6 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSupportModal }) => {
         <div className={styles.ctaGroup}>
           <button
             type="button"
-            className={styles.btnSecondary}
-            onClick={() => handleScrollTo('historia')}
-            id="hero-conheca-historia-btn"
-          >
-            <span>Conheça nossa história</span>
-            <ArrowRight size={18} />
-          </button>
-
-          <button
-            type="button"
             className={styles.btnPrimary}
             onClick={() => {
               if (onOpenSupportModal) {
@@ -73,20 +64,20 @@ export const Hero: React.FC<HeroProps> = ({ onOpenSupportModal }) => {
             }}
             id="hero-quero-apoiar-btn"
           >
-            <Heart size={20} fill="#0D2B40" color="#0D2B40" />
+            <img className={styles.supportEffect} src={supportEffect} alt="" aria-hidden="true" />
+            <Heart className={styles.supportHeart} size={20} fill="currentColor" />
             <span>Quero apoiar</span>
           </button>
-        </div>
 
-        {/* Rodapé do Hero: Card Flutuante Centralizado */}
-        <div className={styles.floatingBadge}>
-          <div className={styles.badgeHighlight}>
-            <Award size={20} color="#F4C542" />
-            <span>50 ANOS</span>
-          </div>
-          <div className={styles.badgeText}>
-            <strong>1976 → 2026</strong> Atuação socioassistencial ininterrupta
-          </div>
+          <button
+            type="button"
+            className={styles.btnSecondary}
+            onClick={() => handleScrollTo('historia')}
+            id="hero-conheca-historia-btn"
+          >
+            <span>Conheça nossa história</span>
+            <ArrowRight size={18} />
+          </button>
         </div>
       </div>
     </section>

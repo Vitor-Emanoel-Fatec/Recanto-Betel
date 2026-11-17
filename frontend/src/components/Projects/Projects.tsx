@@ -99,7 +99,7 @@ export const Projects: React.FC = () => {
           <button
             type="button"
             style={{
-              backgroundColor: '#174A6E',
+              backgroundColor: '#093273',
               color: '#FFFFFF',
               fontWeight: 600,
               padding: '12px 24px',

@@ -3,10 +3,37 @@
 ## Área do responsável
 
 O ícone de usuário no cabeçalho abre o cadastro e o login de responsáveis, usando
-os endpoints `POST /api/user/signup` e `POST /api/user/signin` da API. Durante o
+os endpoints `POST /api/auth/signup` e `POST /api/auth/signin` da API. Durante o
 desenvolvimento, o Vite encaminha `/api` para `http://localhost:3000`. Para usar
 outra URL de API, configure `VITE_API_URL` apontando para o prefixo da API (por
 exemplo, `https://api.exemplo.com/api`).
+
+O endpoint público `GET /api/auth/terms` fornece a versão e o texto dos termos.
+Se a resposta falhar, o cadastro mostra o erro e permite tentar novamente; a
+API também rejeita o cadastro sem aceite e grava a versão e o horário aceitos.
+Em chamadas entre origens diferentes, configure `FRONTEND_ORIGIN` na API.
+
+## Publicações do Facebook
+
+A seção de notícias usa o [Page Plugin oficial da Meta](https://developers.facebook.com/docs/plugins/page-plugin/)
+para a página pública [Recanto Betel Tatuí](https://www.facebook.com/recantobeteltatui).
+O iframe só é carregado após a pessoa selecionar “Carregar publicações”; não há
+token ou credencial privada. A página oficial continua disponível pelo link
+alternativo caso a incorporação não seja exibida.
+
+O Page Plugin é servido pelo iframe oficial, com a aba `timeline`, largura
+responsiva limitada a 500 px e cabeçalho reduzido. Na validação do navegador em
+16/11/2026, a URL da página foi reconhecida, mas o iframe mostrou somente nome e
+seguidores; as publicações não apareceram. O iframe não teve respostas HTTP
+falhas, mas o JavaScript interno da Meta registrou erros de elementos/estado.
+Logo, o feed continua **não validado**; o link alternativo permanece visível.
+
+A Meta documenta que páginas com restrição de privacidade, idade ou país não
+podem ser incorporadas. Um administrador da página deve confirmar essas
+restrições e que a linha do tempo está pública. As configurações administrativas
+da página não podem ser verificadas pelo site. Se estiverem corretas e o feed
+continuar vazio, a causa precisa ser investigada com a Meta; não há scraping ou
+conteúdo substituto no portal.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

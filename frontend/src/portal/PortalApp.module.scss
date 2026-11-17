@@ -23,7 +23,7 @@
   z-index: 10;
   top: 0;
   background: $color-white;
-  box-shadow: 0 2px 12px rgba(13, 43, 64, .07);
+  box-shadow: 0 2px 12px rgba(6, 30, 70, .07);
 }
 
 .headerTop, .navRow {
@@ -38,13 +38,9 @@
 .headerTop { min-height: 76px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; }
 .brandMark {
-  display: grid;
-  width: 42px;
+  width: 50px;
   height: 42px;
-  color: $color-gold;
-  border-radius: 50%;
-  background: $color-navy;
-  place-items: center;
+  object-fit: contain;
 }
 .brand span:last-child { display: grid; line-height: 1.15; }
 .brand small { color: $color-text-muted; font-size: .62rem; font-weight: 700; letter-spacing: .1em; }
@@ -70,10 +66,17 @@
 
 .main { max-width: 1240px; min-height: calc(100vh - 190px); margin: 0 auto; padding: 24px 32px 64px; }
 .breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-bottom: 18px; color: $color-text-muted; font-size: .75rem; }
+.breadcrumbItem { display: inline-flex; align-items: center; gap: 9px; }
+.breadcrumb a { color: $color-navy-light; &:hover { text-decoration: underline; } }
 .breadcrumb strong { color: $color-navy; }
 .demoNotice, .successBanner { display: flex; align-items: flex-start; gap: 10px; padding: 12px 15px; color: #644d0b; border: 1px solid #f1df9c; border-radius: $radius-sm; background: #fff9e8; font-size: .79rem; line-height: 1.5; }
 .demoNotice svg, .successBanner svg { flex: 0 0 auto; margin-top: 1px; }
 .successBanner { margin-bottom: 20px; color: #245c38; border-color: #b7dfc2; background: #eff9f1; }
+.validationSummary { margin-bottom: 18px; padding: 14px 18px; color: #7d2727; border: 1px solid #e8bcbc; border-radius: $radius-sm; background: #fff6f6; font-size: .84rem; line-height: 1.55; }
+.validationSummary ul { margin: 8px 0 0; padding-left: 20px; }
+.validationSummary button { color: inherit; text-align: left; text-decoration: underline; text-underline-offset: 2px; }
+.validationSummary button:hover { color: #541919; }
+input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: #b43a3a !important; box-shadow: 0 0 0 2px rgba(180, 58, 58, .12); }
 .pageTitle { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin: 30px 0 24px; }
 .eyebrow { color: $color-navy-light; font-size: .69rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .pageTitle h1 { margin-top: 5px; font-size: clamp(1.7rem, 3vw, 2.15rem); letter-spacing: -.035em; }
@@ -113,6 +116,9 @@
 .textLink, .smallAction { color: $color-navy-light; font-size: .78rem; font-weight: 750; white-space: nowrap; &:hover { text-decoration: underline; } }
 .activityList { display: grid; }
 .activityItem { display: flex; min-width: 0; align-items: center; gap: 11px; padding: 13px 0; border-top: 1px solid $color-border-light; }
+.formProgressButton { width: 100%; color: inherit; border-right: 0; border-bottom: 0; border-left: 0; background: transparent; font: inherit; text-align: left; cursor: pointer; &:hover { background: $color-surface-hover; } &:focus-visible { outline: 2px solid $color-navy-light; outline-offset: 2px; } }
+.formProgressChevron { flex: 0 0 auto; color: $color-text-light; transition: transform .18s ease; }
+.formProgressChevronOpen { transform: rotate(180deg); }
 .activityIcon { display: grid; width: 36px; height: 36px; flex: 0 0 auto; color: $color-navy-light; border-radius: 10px; background: $color-navy-subtle; place-items: center; }
 .activityText { display: grid; min-width: 0; flex: 1; gap: 3px; }
 .activityText strong { overflow: hidden; color: $color-navy; font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }
@@ -125,7 +131,10 @@
 .quickLink strong { font-size: .8rem; }
 .quickLink small { color: $color-text-muted; font-size: .69rem; }
 .helperNote { margin-top: 16px; color: $color-text-muted; font-size: .73rem; line-height: 1.5; }
-
+.formStatus { color: $color-text-muted; font-size: .7rem; font-weight: 700; white-space: nowrap; }
+.termsText { padding: 12px; color: $color-text-muted; border: 1px solid $color-border; border-radius: $radius-sm; background: $color-surface-hover; font-size: .78rem; line-height: 1.5; }
+.termsText small { display: block; margin-top: 7px; font-weight: 750; }
+.errorText { color: #9c3434; font-size: .78rem; }
 .badge { display: inline-flex; align-items: center; gap: 6px; width: fit-content; padding: 5px 9px; border-radius: $radius-full; font-size: .67rem; font-weight: 750; white-space: nowrap; }
 .badge > span { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .badge_positive { color: #286744; background: #eaf6ed; }
@@ -172,6 +181,11 @@ td small { display: block; margin-top: 3px; color: $color-text-light; font-size:
 .detailList > div { min-width: 0; }
 .detailList dt { color: $color-text-muted; font-size: .7rem; }
 .detailList dd { margin-top: 3px; color: $color-navy; font-size: .84rem; font-weight: 700; overflow-wrap: anywhere; }
+.adminRecordDetails { display: grid; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid $color-border-light; }
+.adminRecordDetails h3 { margin: 20px 0 12px; color: $color-navy; font-size: .9rem; }
+.adminRecordDetails > h3 { margin: 0; color: $color-navy; font-size: .95rem; }
+.adminRecordDetails h4 { margin-bottom: 14px; color: $color-navy; font-size: .83rem; }
+.adminRecordDetails .panel { margin-top: 12px; padding: 14px; box-shadow: none; }
 .timeline { display: grid; gap: 0; padding: 0; list-style: none; }
 .timeline li { position: relative; display: flex; gap: 12px; padding-bottom: 20px; }
 .timeline li:not(:last-child)::before { position: absolute; top: 12px; bottom: 0; left: 5px; width: 1px; content: ''; background: $color-border; }
@@ -211,6 +225,7 @@ td small { display: block; margin-top: 3px; color: $color-text-light; font-size:
   .headerTop { min-height: 66px; padding: 0 16px; }
   .demoBadge { display: none; }
   .userButton { font-size: .72rem; }
+  .userButton > span:not(.avatar) { display: none; }
   .mobileToggle { display: grid; width: 36px; height: 36px; place-items: center; }
   .navRow { display: none; padding: 0 16px 13px; }
   .navRowOpen { display: flex; align-items: stretch; flex-direction: column; gap: 10px; }
@@ -250,4 +265,20 @@ td small { display: block; margin-top: 3px; color: $color-text-light; font-size:
 
 @media (prefers-reduced-motion: reduce) {
   .app *, .app *::before, .app *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
+
+.questionRow { min-width: 0; margin: 0; padding: 0; border: 0; display: grid; gap: 8px; }
+.questionRow legend { padding: 0; margin-bottom: 8px; color: $color-navy; font-size: .77rem; font-weight: 700; }
+.radioGroup { display: flex; flex-wrap: wrap; gap: 10px; }
+.radioOption { display: inline-flex; align-items: center; gap: 8px; min-height: 43px; padding: 0 16px; color: $color-text; border: 1px solid $color-border; border-radius: 7px; background: $color-white; font-size: .83rem; font-weight: 500; cursor: pointer; &:has(input:checked) { color: $color-navy; border-color: $color-navy-light; background: $color-navy-subtle; } &:focus-within { box-shadow: 0 0 0 3px rgba($color-navy-light, .13); } }
+.radioOption input { width: 16px; min-height: 0; margin: 0; accent-color: $color-navy; }
+.consent { display: flex; align-items: flex-start; gap: 11px; padding: 14px; color: $color-text; border: 1px solid $color-border; border-radius: 7px; background: $color-surface-hover; font-size: .82rem; line-height: 1.55; cursor: pointer; }
+.consent input { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 2px; accent-color: $color-navy; }
+.repeatRow, .repeatRow3 { display: grid; gap: 12px; min-width: 0; margin: 14px 0 0; padding: 14px 0 0; border: 0; border-top: 1px solid $color-border-light; }
+.repeatRow { grid-template-columns: 2fr 1fr 1fr 1fr; }
+.repeatRow3 { grid-template-columns: 2fr 1fr 1fr; }
+.repeatRow legend, .repeatRow3 legend { padding: 0 8px 0 0; color: $color-text-muted; font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.repeatRow .field, .repeatRow3 .field { min-width: 0; }
+@media (max-width: 720px) {
+  .repeatRow, .repeatRow3 { grid-template-columns: 1fr; }
 }

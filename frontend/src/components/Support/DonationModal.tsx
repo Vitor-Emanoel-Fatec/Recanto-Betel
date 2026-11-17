@@ -72,7 +72,7 @@ export const DonationModal: React.FC<DonationModalProps> = ({
               fontFamily: 'monospace',
               fontSize: '1.2rem',
               fontWeight: 800,
-              color: '#174A6E',
+              color: '#093273',
               backgroundColor: '#FFFFFF',
               border: '1px solid #CBD5E1',
               padding: '10px 18px',
@@ -88,7 +88,7 @@ export const DonationModal: React.FC<DonationModalProps> = ({
             onClick={handleCopy}
             style={{
               backgroundColor: copied ? '#79B98A' : '#F4C542',
-              color: copied ? '#FFFFFF' : '#0D2B40',
+              color: copied ? '#FFFFFF' : '#061E46',
               fontWeight: 700,
               fontSize: '0.95rem',
               padding: '12px 28px',
@@ -111,17 +111,17 @@ export const DonationModal: React.FC<DonationModalProps> = ({
         {/* Dados Bancários Complementares */}
         <div
           style={{
-            backgroundColor: '#EDF5FA',
+            backgroundColor: '#EDF2F9',
             borderRadius: '12px',
             padding: '16px',
             fontSize: '0.875rem',
-            color: '#174A6E',
+            color: '#093273',
             textAlign: 'left',
             lineHeight: '1.5',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', fontWeight: 700 }}>
-            <ShieldCheck size={18} color="#256B9D" />
+            <ShieldCheck size={18} color="#164B91" />
             <span>Dados da Conta Bancária Institucional:</span>
           </div>
           <div><strong>Favorecido:</strong> Associação Recanto Betel</div>

@@ -4,6 +4,7 @@ import { PrismaService } from '../database/prisma.service.js';
 import { ICreateParent } from './dto/parent-create.dto.js';
 import { IFindParent } from './dto/parent-find.dto.js';
 import { IUpdateParent } from './dto/parent-update.dto.js';
+import { createPublicCode } from '../common/public-codes.js';
 
 @Injectable()
 export class ParentService {
@@ -13,6 +14,7 @@ export class ParentService {
         try {
             const parent = await this.PrismaService.parent.create({
                 data: {
+                    publicCode: createPublicCode('RES'),
                     name: data.name,
                     cpf: data.cpf,
                     contact: data.contact,
@@ -29,6 +31,7 @@ export class ParentService {
 
             return parent;
         } catch(E: any){
+            console.log(E.message);
             throw new InternalServerErrorException("Erro ao cadastrar responsável");
         }
     }
@@ -38,7 +41,7 @@ export class ParentService {
             const parent = await this.PrismaService.parent.findFirst({where: data});
             return parent;
         } catch(E: any) {
-            throw new InternalServerErrorException("Erro ao tentar encontrar usuário");
+            throw new InternalServerErrorException("Erro ao tentar encontrar responsável");
         }
     }
 

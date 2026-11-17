@@ -2,7 +2,8 @@ export interface IUpdateBeneficiary {
     name?: string,
     birthday?: Date,
     rg?: number,
-    cpf?: number,
+    cpf?: string,
     school?: string,
-    period?: string
+    period?: string,
+    status?: 'PENDING' | 'APPROVED' | 'REJECTED'
 }

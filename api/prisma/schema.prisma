@@ -4,73 +4,266 @@ generator client {
 
 datasource db {
   provider = "mysql"
+  
 }
 
 model User {
-  id                  String    @id @default(uuid())
-  email               String    @unique
-  password            String
-  parent              Parent?
+  id       String  @id @default(uuid())
+  email    String  @unique
+  password String
+  role     String  @default("USER")
+  termsAcceptedVersion String? @db.VarChar(32)
+  termsAcceptedAt DateTime?
+  parent   Parent?
+  enrollmentEvents EnrollmentEvent[]
 
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum BeneficiaryStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum EnrollmentStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum EnrollmentEventType {
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  RETURNED_TO_PENDING
+}
+
+enum EnrollmentFormKind {
+  TERMO
+  AUTORIZACAO
+  RELATOS
 }
 
 model Beneficiary {
-  id                  String    @id @default(uuid())
-  name                String
-  birthday            DateTime  @db.Date
-  rg                  Int
-  cpf                 Int       @unique
-  school              String
-  period              String
-  health_info         health_info?
-  parent              ParentBenificiary[]
+  id                String              @id @default(uuid())
+  publicCode        String              @unique @db.VarChar(32)
+  name              String
+  birthday          DateTime            @db.Date
+  rg                Int
+  cpf               String              @unique @db.VarChar(11)
+  school            String
+  period            String
+  religion          String
+  story             String              @db.Text
+  status            BeneficiaryStatus   @default(PENDING)
+  incomeAndBenefits IncomeAndBenefits?
+  anamnese          Anamnese?
+  address           Address?
+  relativies        Relatives[]
+  parent            ParentBenificiary[]
+  AuthorizedEscorts AuthorizedEscorts[]
+  enrollments       Enrollment[]
 
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  addressId String?
 }
 
-model health_info {
-  id                  String  @id @default(uuid())
-  beneficiary_id      String  @unique
-  health_problem      String?
-  medical_tratament   String?
-  allergy             String?
-  previous_illnesses  String?
-  beneficiary         Beneficiary @relation(fields: [beneficiary_id], references: [id])
+model Address {
+  id             String @id @default(uuid())
+  beneficiary_id String @unique
 
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  streetAddress String
+  house_number  Int
+  neighborhood  String
+  landmark      String?
+  housingType   Int
+  housingCost   Decimal? @db.Decimal(10, 2)
+  waterCost     Decimal? @db.Decimal(10, 2)
+  powerCost     Decimal? @db.Decimal(10, 2)
+  foodCost      Decimal? @db.Decimal(10, 2)
+  gasCost       Decimal? @db.Decimal(10, 2)
+
+  beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model IncomeAndBenefits {
+  id             String @id @default(uuid())
+  beneficiary_id String @unique
+
+  nis                  String?
+  totalIncome          Decimal  @db.Decimal(10, 2)
+  perCapitaIncome      Decimal  @db.Decimal(10, 2)
+  hasGovernmentBenefit Boolean
+  benefitName          String?
+  benefitValue         Decimal? @db.Decimal(10, 2)
+
+  beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuthorizedEscorts {
+  id             String @id @default(uuid())
+  beneficiary_id String
+
+  name     String
+  relation Int
+  contact  String
+
+  beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Anamnese {
+  id             String @id @default(uuid())
+  beneficiary_id String @unique
+  enrollment_id  String? @unique
+
+  mainComplaintEvolution  String? @db.Text
+  suffersFromDisease      Boolean?
+  diseaseDescription      String?
+  underMedicalTreatment   Boolean?
+  isPregnant              Boolean? @default(false)
+  usesMedication          Boolean?
+  medicationDescription   String?
+  attendingPhysicianName  String?
+  attendingPhysicianPhone String?
+  hasAllergies            Boolean?
+  allergiesDescription    String?
+  hasHadSurgery           Boolean?
+  surgeriesDescription    String?
+  healingProblems         Boolean?
+  anesthesiaProblems      Boolean?
+  hemorrhageProblems      Boolean?
+
+  rheumaticFever          Boolean?
+  heartProblems           Boolean?
+  kidneyProblems          Boolean?
+  gastricProblems         Boolean?
+  respiratoryProblems     Boolean?
+  allergicProblems        Boolean?
+  jointRheumatismProblems Boolean?
+  diabetes                Boolean?
+  arterialHypertension    Boolean?
+
+  habits           String? @db.Text
+  familyHistory    String? @db.Text
+  otherInformation String? @db.Text
+  declarationAccepted Boolean?
+  responsibleSignature String? @db.VarChar(191)
+  isComplete       Boolean @default(false)
+
+  beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
+  enrollment  Enrollment?  @relation(fields: [enrollment_id], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Parent {
-  id                  String        @id @default(uuid())
-  user_id             String?       @unique
-  name                String
-  cpf                 Int           @unique
-  contact             String
-  email               String        @unique
-  profession          String?
-  educational_level   String?
-  comertial_address   String?
-  salary              Float?
-  user                User?         @relation(fields: [user_id], references: [id])
-  beneficiary         ParentBenificiary[]
+  id                String              @id @default(uuid())
+  publicCode        String              @unique @db.VarChar(32)
+  user_id           String?             @unique
+  name              String
+  cpf               String              @unique @db.VarChar(11)
+  contact           String
+  email             String              @unique
+  profession        String?
+  educational_level String?
+  comertial_address String?
+  salary            Decimal?            @db.Decimal(10, 2)
+  user              User?               @relation(fields: [user_id], references: [id])
+  beneficiary       ParentBenificiary[]
+  enrollments       Enrollment[]
 
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Relatives {
+  id             String   @id @default(uuid())
+  beneficiary_id String
+  name           String
+  birthday       DateTime
+  relation       String   @db.VarChar(191)
+  salary         Decimal  @db.Decimal(10, 2)
+
+  beneficiary Beneficiary? @relation(fields: [beneficiary_id], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ParentBenificiary {
-  id                String      @id @default(uuid())
-  beneficiary_id    String      @unique
-  parent_id         String      @unique
-  relationshipType  String
+  id               String @id @default(uuid())
+  beneficiary_id   String
+  parent_id        String
+  relationshipType String @db.VarChar(191)
 
-  beneficiary       Beneficiary @relation(fields: [beneficiary_id], references: [id])
-  parent            Parent      @relation(fields: [parent_id], references: [id])
+  beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
+  parent      Parent      @relation(fields: [parent_id], references: [id])
 
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([beneficiary_id, parent_id])
+}
+
+model Enrollment {
+  id             String          @id @default(uuid())
+  publicCode     String          @unique @db.VarChar(32)
+  parent_id      String
+  beneficiary_id String
+  status         EnrollmentStatus @default(PENDING)
+  termsAcceptedVersion String?   @db.VarChar(32)
+  termsAcceptedAt DateTime?
+  decisionNote   String?         @db.Text
+  submittedAt    DateTime        @default(now())
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  parent      Parent               @relation(fields: [parent_id], references: [id])
+  beneficiary Beneficiary          @relation(fields: [beneficiary_id], references: [id])
+  history     EnrollmentEvent[]
+  forms       EnrollmentForm[]
+  anamnese    Anamnese?
+
+  @@index([parent_id, status])
+  @@index([beneficiary_id, status])
+}
+
+model EnrollmentForm {
+  id            String            @id @default(uuid())
+  enrollment_id String
+  kind          EnrollmentFormKind
+  data          Json
+  isComplete    Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollment_id], references: [id], onDelete: Cascade)
+
+  @@unique([enrollment_id, kind])
+}
+
+model EnrollmentEvent {
+  id            String             @id @default(uuid())
+  enrollment_id String
+  actor_id      String?
+  type          EnrollmentEventType
+  note          String?            @db.Text
+  createdAt     DateTime           @default(now())
+
+  enrollment Enrollment @relation(fields: [enrollment_id], references: [id])
+  actor      User?      @relation(fields: [actor_id], references: [id], onDelete: SetNull)
+
+  @@index([enrollment_id, createdAt])
 }

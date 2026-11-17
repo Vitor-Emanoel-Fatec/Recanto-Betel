@@ -7,9 +7,13 @@ import {
   Body,
   Res,
   Param,
-  Put
+  Put,
+  UseGuards,
 } from '@nestjs/common';
 import { ParentService } from './parent.service.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { RolesGuard } from '../auth/roles.guard.js';
 
 import type { ICreateParent } from './dto/parent-create.dto.js';
 import type { IFindParent } from './dto/parent-find.dto.js';
@@ -17,6 +21,8 @@ import type { IUpdateParent } from './dto/parent-update.dto.js';
 import type { Response } from 'express';
 
 @Controller('parent')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN')
 export class ParentController {
   constructor(private readonly parentService: ParentService) {}
 

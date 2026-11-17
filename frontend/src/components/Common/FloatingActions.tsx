@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronUp } from 'lucide-react';
-import { WhatsAppIcon } from './SocialIcons';
 import styles from './FloatingActions.module.scss';
 
 export const FloatingActions: React.FC = () => {
@@ -21,7 +20,7 @@ export const FloatingActions: React.FC = () => {
 
   return (
     <aside className={styles.floatingWrapper} aria-label="Ações rápidas">
-      {/* Botão de WhatsApp */}
+      {/* Botão de WhatsApp
       <a
         href="https://wa.me/5515998765432?text=Olá,%20gostaria%20de%20saber%20mais%20sobre%20a%20Associação%20Recanto%20Betel"
         target="_blank"
@@ -31,7 +30,7 @@ export const FloatingActions: React.FC = () => {
         title="Falar no WhatsApp"
       >
         <WhatsAppIcon size={26} color="#FFFFFF" />
-      </a>
+      </a> */}
 
       {/* Botão de Voltar ao Topo */}
       <button

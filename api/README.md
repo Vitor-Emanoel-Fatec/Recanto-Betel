@@ -31,6 +31,15 @@
 $ yarn install
 ```
 
+Configure `DATABASE_URL` for the MySQL/MariaDB database used by the API. The
+default connection is local development only; never use production credentials
+or a production database for browser or integration tests. `PrismaService` and
+Prisma CLI both use this URL.
+
+When the frontend calls an API on a different origin, set `FRONTEND_ORIGIN` to
+the exact frontend origin (or a comma-separated list). The Vite development
+proxy is same-origin and does not require CORS; do not use `*` with credentials.
+
 ## Compile and run the project
 
 ```bash
@@ -55,6 +64,20 @@ $ yarn run test:e2e
 
 # test coverage
 $ yarn run test:cov
+```
+
+## Identificadores públicos
+
+As respostas de beneficiários, responsáveis e matrículas incluem um `publicCode`
+para exibição, por exemplo `MAT-2026-...`. Os UUIDs continuam sendo usados
+internamente nas relações e nos caminhos existentes da API.
+
+Antes de iniciar uma versão com essa alteração, aplique a migração pendente no
+banco configurado:
+
+```bash
+yarn prisma migrate deploy
+yarn prisma generate
 ```
 
 ## Deployment

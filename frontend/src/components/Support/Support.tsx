@@ -8,7 +8,6 @@ import {
   ArrowRight,
   Sparkles,
   Check,
-  Send,
 } from 'lucide-react';
 import { CONTACT_INFO } from '../../data/mockData';
 import { Modal } from '../Common/Modal';
@@ -24,24 +23,9 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
   const [volunteerModalOpen, setVolunteerModalOpen] = useState(false);
   const [memberModalOpen, setMemberModalOpen] = useState(false);
 
-  // Volunteer form state
-  const [volName, setVolName] = useState('');
-  const [volEmail, setVolEmail] = useState('');
-  const [volPhone, setVolPhone] = useState('');
-  const [volArea, setVolArea] = useState('Pedagógico / Reforço');
-
   const copyPixKey = () => {
     navigator.clipboard.writeText(CONTACT_INFO.pixKey);
     onShowToast('✓ Chave Pix copiada com sucesso!', 'success');
-  };
-
-  const handleVolunteerSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onShowToast('✓ Cadastro de voluntário enviado! Entraremos em contato.', 'success');
-    setVolunteerModalOpen(false);
-    setVolName('');
-    setVolEmail('');
-    setVolPhone('');
   };
 
   const transformationSteps = [
@@ -108,7 +92,7 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
             </div>
             <h3 className={styles.cardTitle}>Nota Fiscal Paulista</h3>
             <p className={styles.cardDesc}>
-              Doe seus cupons fiscais de compras sem CPF diretamente pelo aplicativo oficial da NFP.
+              Cadastre seu CPF para doar automaticamente seus cupons fiscais ou contribua pelo aplicativo da NFP.
             </p>
             <div className={styles.cardBtnGroup}>
               <button
@@ -121,6 +105,7 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
               </button>
             </div>
           </div>
+
 
           {/* 3. Voluntariado */}
           <div className={styles.supportCard}>
@@ -145,7 +130,7 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
 
           {/* 4. Torne-se Associado */}
           <div className={styles.supportCard}>
-            <div className={`${styles.cardIconCircle} ${styles['cardIconCircle--blue']}`}>
+            <div className={`${styles.cardIconCircle} ${styles['cardIconCircle--navy']}`}>
               <UserPlus size={28} />
             </div>
             <h3 className={styles.cardTitle}>Torne-se Associado</h3>
@@ -155,7 +140,7 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
             <div className={styles.cardBtnGroup}>
               <button
                 type="button"
-                className={`${styles.btnAction} ${styles['btnAction--outline']}`}
+                className={`${styles.btnAction} ${styles['btnAction--secondary']}`}
                 onClick={() => setMemberModalOpen(true)}
               >
                 <span>Quero ser associado</span>
@@ -214,7 +199,7 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
             }}
           >
             {/* SVG Simulado de QR Code Pix */}
-            <svg width="160" height="160" viewBox="0 0 100 100" fill="#0D2B40">
+            <svg width="160" height="160" viewBox="0 0 100 100" fill="#061E46">
               <rect width="30" height="30" x="5" y="5" rx="3" />
               <rect width="20" height="20" x="10" y="10" fill="#FFFFFF" />
               <rect width="10" height="10" x="15" y="15" />
@@ -243,8 +228,8 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
               fontFamily: 'monospace',
               fontWeight: 700,
               fontSize: '1rem',
-              color: '#174A6E',
-              backgroundColor: '#EDF5FA',
+              color: '#093273',
+              backgroundColor: '#EDF2F9',
               padding: '8px 14px',
               borderRadius: '8px',
               marginBottom: '16px',
@@ -258,7 +243,7 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
             onClick={copyPixKey}
             style={{
               backgroundColor: '#F4C542',
-              color: '#0D2B40',
+              color: '#061E46',
               fontWeight: 700,
               padding: '12px 24px',
               borderRadius: '9999px',
@@ -275,28 +260,71 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
         </div>
       </Modal>
 
-      {/* Modal Nota Fiscal Paulista */}
       <Modal
         isOpen={nfpModalOpen}
         onClose={() => setNfpModalOpen(false)}
         title="Como Doar pela Nota Fiscal Paulista"
         tag="Passo a Passo"
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', color: '#132E43' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', color: '#132E43' }}>
           <p style={{ lineHeight: '1.6' }}>
             Você pode doar os créditos de suas compras sem gastar nada a mais, escolhendo a
             <strong> Associação Recanto Betel</strong> como sua entidade beneficiária oficial!
           </p>
 
-          <ol style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <li>Acesse o app da <strong>Nota Fiscal Paulista</strong> no celular;</li>
-            <li>Faça login com seu CPF e senha da Secretaria da Fazenda de SP;</li>
-            <li>No menu lateral, selecione <strong>Doação de Cupons com Automática</strong>;</li>
-            <li>Busque pelo CNPJ: <strong>47.818.778/0001-76</strong>;</li>
-            <li>Confirme a Associação Recanto Betel. Pronto! Em cada compra informando seu CPF, parte do ICMS é repassada automaticamente à instituição.</li>
-          </ol>
+          {/* Opção 1: Cadastro via Formulário (Mais rápido) */}
+          <div
+            style={{
+              backgroundColor: '#F4F8F6',
+              border: '1px solid #D5E5DC',
+              borderRadius: '10px',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+            }}
+          >
+            <strong style={{ fontSize: '15px' }}>Opção 1: Cadastro automático pela nossa equipe</strong>
+            <p style={{ fontSize: '14px', lineHeight: '1.5', margin: 0 }}>
+              Prefere que a gente faça o vínculo para você? Preencha nosso formulário rápido autorizando
+              a doação automática do seu CPF:
+            </p>
+            <a
+              href="https://docs.google.com/forms/d/e/1FAIpQLSfxj9cOrSvD63xH7XDxwxdkuLjsJfAQIBSN8VtMSeT9PZvJOA/viewform"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${styles.btnAction} ${styles['btnAction--secondary']}`}
+              style={{
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                marginTop: '4px',
+              }}
+            >
+              <span>Preencher formulário de cadastro</span>
+              <ArrowRight size={16} style={{ transform: 'translateY(1px)', flexShrink: 0 }} />
+            </a>
+          </div>
+
+          {/* Opção 2: Passo a passo manual no App */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <strong style={{ fontSize: '15px' }}>Opção 2: Configurar direto pelo aplicativo</strong>
+            <ol style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '14px' }}>
+              <li>Acesse o app da <strong>Nota Fiscal Paulista</strong> no celular;</li>
+              <li>Faça login com seu CPF e senha da Secretaria da Fazenda de SP;</li>
+              <li>No menu lateral, selecione <strong>Doação de Cupons com CPF (Automática)</strong>;</li>
+              <li>Busque pelo CNPJ: <strong>47.818.778/0001-76</strong>;</li>
+              <li>
+                Confirme a Associação Recanto Betel. Pronto! Em cada compra informando seu CPF, parte do
+                ICMS é repassada automaticamente à instituição.
+              </li>
+            </ol>
+          </div>
         </div>
       </Modal>
+
 
       {/* Modal Cadastro de Voluntário */}
       <Modal
@@ -305,106 +333,67 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
         title="Seja um Voluntário do Recanto"
         tag="Faça a Diferença"
       >
-        <form onSubmit={handleVolunteerSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          <p style={{ fontSize: '0.925rem', color: '#53697D' }}>
-            Preencha seus dados e nossa equipe de coordenação entrará em contato para agendar uma
-            visita e alinhar sua disponibilidade com as necessidades dos projetos.
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', color: '#132E43' }}>
+          <p style={{ lineHeight: '1.6', fontSize: '0.95rem', color: '#53697D', margin: 0 }}>
+            Seu tempo, talento profissional e carinho transformam o dia a dia das nossas crianças e
+            jovens.
           </p>
 
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#174A6E', marginBottom: '4px' }}>
-              Nome Completo *
-            </label>
-            <input
-              type="text"
-              required
-              value={volName}
-              onChange={(e) => setVolName(e.target.value)}
-              placeholder="Seu nome"
-              style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#174A6E', marginBottom: '4px' }}>
-              E-mail *
-            </label>
-            <input
-              type="email"
-              required
-              value={volEmail}
-              onChange={(e) => setVolEmail(e.target.value)}
-              placeholder="seuemail@exemplo.com"
-              style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#174A6E', marginBottom: '4px' }}>
-              WhatsApp / Telefone *
-            </label>
-            <input
-              type="tel"
-              required
-              value={volPhone}
-              onChange={(e) => setVolPhone(e.target.value)}
-              placeholder="(15) 99999-9999"
-              style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#174A6E', marginBottom: '4px' }}>
-              Área de Interesse
-            </label>
-            <select
-              value={volArea}
-              onChange={(e) => setVolArea(e.target.value)}
-              style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFFFFF' }}
-            >
-              <option value="Pedagógico / Reforço">Acompanhamento Pedagógico / Reforço</option>
-              <option value="Oficinas Culturais / Música">Oficinas Culturais / Música / Artes</option>
-              <option value="Esporte e Lazer">Esporte, Recreação e Lazer</option>
-              <option value="Administrativo / Apoio">Apoio Administrativo / Eventos</option>
-              <option value="Horta e Meio Ambiente">Horta Educativa e Meio Ambiente</option>
-            </select>
-          </div>
-
-          <button
-            type="submit"
+          <div
             style={{
-              backgroundColor: '#174A6E',
-              color: '#FFFFFF',
-              fontWeight: 700,
-              padding: '12px',
-              borderRadius: '9999px',
-              border: 'none',
-              cursor: 'pointer',
-              marginTop: '8px',
+              backgroundColor: '#F0F5F9',
+              border: '1px solid #D3E1EC',
+              borderRadius: '10px',
+              padding: '16px',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
+              flexDirection: 'column',
+              gap: '12px',
             }}
           >
-            <Send size={16} />
-            <span>Enviar Cadastro de Voluntário</span>
-          </button>
-        </form>
+            <strong style={{ fontSize: '15px', color: '#093273' }}>
+              Cadastro Oficial de Voluntários
+            </strong>
+            <p style={{ fontSize: '14px', lineHeight: '1.5', margin: 0, color: '#132E43' }}>
+              Preencha nosso formulário de inscrição informando sua área de interesse e disponibilidade.
+              Nossa equipe de coordenação entrará em contato para agendar uma visita!
+            </p>
+
+            <a
+              href="https://docs.google.com/forms/d/e/1FAIpQLSdi505lnTHQGMgNEOy1EZZsiooCxO-wC7yaVVGhI7IKfMwGLg/viewform"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${styles.btnAction} ${styles['btnAction--secondary']}`}
+              style={{
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                marginTop: '4px',
+              }}
+            >
+              <span>Preencher formulário de voluntariado</span>
+              <ArrowRight size={16} style={{ transform: 'translateY(1px)', flexShrink: 0 }} />
+            </a>
+          </div>
+        </div>
       </Modal>
 
       {/* Modal Torne-se Associado */}
       <Modal
         isOpen={memberModalOpen}
         onClose={() => setMemberModalOpen(false)}
-        title="Torne-se um Associado Contribuinte"
-        tag="Sustentabilidade Continuada"
+        title="Torne-se um Associado do Recanto Betel"
+        tag="Faça Parte da Nossa História"
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', color: '#132E43' }}>
-          <p style={{ lineHeight: '1.6' }}>
-            Como associado da Associação Recanto Betel, você contribui mensalmente com um valor fixo
-            e passa a integrar a comunidade formal que acompanha as prestações de contas e o futuro da entidade.
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', color: '#132E43' }}>
+          <p style={{ lineHeight: '1.6', margin: 0 }}>
+            Faça parte da transformação de vidas por meio do amor, da fé e da solidariedade! Como
+            associado(a) da <strong>Associação Recanto Betel</strong>, você se integra oficialmente à
+            nossa comunidade e acompanha de perto os projetos e resultados da instituição.
           </p>
+
+          {/* Formas de participação alinhadas ao formulário */}
           <div
             style={{
               backgroundColor: '#F8FAFC',
@@ -413,36 +402,66 @@ export const Support: React.FC<SupportProps> = ({ onShowToast }) => {
               border: '1px solid #E2E8F0',
             }}
           >
-            <strong style={{ color: '#174A6E' }}>Planos sugeridos:</strong>
-            <ul style={{ marginTop: '8px', paddingLeft: '18px', color: '#53697D' }}>
-              <li>Sócio Amigo: R$ 30,00 / mês</li>
-              <li>Sócio Protetor: R$ 50,00 / mês</li>
-              <li>Sócio Transformador: R$ 100,00 / mês</li>
+            <strong style={{ color: '#093273', fontSize: '15px' }}>
+              Como você pode contribuir como associado(a):
+            </strong>
+            <ul
+              style={{
+                marginTop: '8px',
+                marginBottom: 0,
+                paddingLeft: '18px',
+                color: '#53697D',
+                fontSize: '14px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+              }}
+            >
+              <li>Contribuições financeiras espontâneas ou recorrentes;</li>
+              <li>Doação de alimentos, roupas e materiais;</li>
+              <li>Trabalho voluntário nos projetos e eventos;</li>
+              <li>Divulgação e fortalecimento das ações sociais na comunidade.</li>
             </ul>
           </div>
-          <p style={{ fontSize: '0.9rem', color: '#53697D' }}>
-            Para formalizar seu termo de filiação, entre em contato via WhatsApp ou envie uma mensagem no formulário de contato abaixo.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setMemberModalOpen(false);
-              const contactEl = document.getElementById('contato');
-              if (contactEl) contactEl.scrollIntoView({ behavior: 'smooth' });
-            }}
+
+          {/* Box com botão para o Google Forms */}
+          <div
             style={{
-              backgroundColor: '#F4C542',
-              color: '#0D2B40',
-              fontWeight: 700,
-              padding: '12px 20px',
-              borderRadius: '9999px',
-              border: 'none',
-              cursor: 'pointer',
-              alignSelf: 'flex-start',
+              backgroundColor: '#F0F5F9',
+              border: '1px solid #D3E1EC',
+              borderRadius: '10px',
+              padding: '16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
             }}
           >
-            Ir para formulário de contato
-          </button>
+            <strong style={{ fontSize: '15px', color: '#093273' }}>
+              Ficha de Cadastro de Associados
+            </strong>
+            <p style={{ fontSize: '14px', lineHeight: '1.5', margin: 0, color: '#132E43' }}>
+              Preencha nosso formulário oficial com seus dados de contato e escolha como prefere
+              participar e receber nossas novidades:
+            </p>
+
+            <a
+              href="https://docs.google.com/forms/d/e/1FAIpQLSc0-pBYNekTFSPbbu1Gbft6MJOaZHATDJsBZx7rs_H3nsM4Gg/viewform"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`${styles.btnAction} ${styles['btnAction--secondary']}`}
+              style={{
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                marginTop: '4px',
+              }}
+            >
+              <span>Preencher cadastro de associado</span>
+              <ArrowRight size={16} style={{ transform: 'translateY(1px)', flexShrink: 0 }} />
+            </a>
+          </div>
         </div>
       </Modal>
     </section>
