@@ -3,14 +3,13 @@ import {
   MapPin,
   FileBadge,
   User,
-  Phone,
   Mail,
   Send,
   ExternalLink,
   CheckCircle2,
 } from 'lucide-react';
 import { CONTACT_INFO } from '../../data/mockData';
-import { FacebookIcon, InstagramIcon, YoutubeIcon, WhatsAppIcon } from '../Common/SocialIcons';
+import { FacebookIcon, InstagramIcon } from '../Common/SocialIcons';
 import styles from './Contact.module.scss';
 
 interface ContactProps {
@@ -103,7 +102,7 @@ export const Contact: React.FC<ContactProps> = ({ onShowToast }) => {
                 </div>
               </div>
 
-              {/* Telefone e WhatsApp */}
+              {/* Telefone e WhatsApp
               <div className={styles.detailItem}>
                 <div className={styles.iconCircle}>
                   <Phone size={20} />
@@ -112,7 +111,7 @@ export const Contact: React.FC<ContactProps> = ({ onShowToast }) => {
                   <strong>Telefone & WhatsApp</strong>
                   <span>{CONTACT_INFO.phone} · {CONTACT_INFO.whatsapp}</span>
                 </div>
-              </div>
+              </div> */}
 
               {/* E-mail */}
               <div className={styles.detailItem}>
@@ -128,7 +127,7 @@ export const Contact: React.FC<ContactProps> = ({ onShowToast }) => {
 
             {/* Redes Sociais */}
             <div>
-              <strong style={{ display: 'block', fontSize: '0.85rem', color: '#174A6E', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>
+              <strong style={{ display: 'block', fontSize: '0.85rem', color: '#093273', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>
                 Nossas Redes Sociais
               </strong>
               <div className={styles.socialRow}>
@@ -150,7 +149,7 @@ export const Contact: React.FC<ContactProps> = ({ onShowToast }) => {
                 >
                   <InstagramIcon size={20} />
                 </a>
-                <a
+                {/* <a
                   href={CONTACT_INFO.social.youtube}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -158,8 +157,8 @@ export const Contact: React.FC<ContactProps> = ({ onShowToast }) => {
                   aria-label="YouTube do Recanto Betel"
                 >
                   <YoutubeIcon size={20} />
-                </a>
-                <a
+                </a> */}
+                {/* <a
                   href={`https://wa.me/5515998765432?text=Olá,%20gostaria%20de%20informações%20sobre%20a%20Associação%20Recanto%20Betel`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -167,14 +166,14 @@ export const Contact: React.FC<ContactProps> = ({ onShowToast }) => {
                   aria-label="WhatsApp do Recanto Betel"
                 >
                   <WhatsAppIcon size={20} />
-                </a>
+                </a> */}
               </div>
             </div>
 
             {/* Card Azul Claro de Localização */}
             <div className={styles.locationCard}>
               <div className={styles.locHeader}>
-                <MapPin size={22} color="#174A6E" />
+                <MapPin size={22} color="#093273" />
                 <span>Localização no Bairro Valinho</span>
               </div>
               <p className={styles.locAddress}>

@@ -40,7 +40,7 @@ export interface ICreateBeneficiary {
     name: string,
     birthday: Date | string,
     rg: number,
-    cpf: number,
+    cpf: string,
     school: string,
     period: string,
     religion: string,

@@ -1,7 +1,8 @@
 import { useState, type FormEvent, type InputHTMLAttributes, type ReactNode } from 'react';
 import { ArrowRight, Check, ClipboardList, FileText, HeartPulse, ShieldCheck, Stethoscope } from 'lucide-react';
 import styles from './PortalApp.module.scss';
-import { demoParent, type Beneficiary, type FichaKind, type FichaSubmission } from './demoData';
+import { type FichaKind } from './portalData';
+import type { EnrollmentRecord } from '../services/enrollmentService';
 
 export const FICHAS: { kind: FichaKind; title: string; description: string; icon: typeof FileText }[] = [
   { kind: 'matricula', title: 'Ficha de matrícula', description: 'Dados da criança, responsáveis, composição familiar e endereço.', icon: FileText },
@@ -14,7 +15,15 @@ export const FICHAS: { kind: FichaKind; title: string; description: string; icon
 export const isFichaKind = (value?: string): value is FichaKind => FICHAS.some((item) => item.kind === value);
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
-const formatDate = (date: string) => new Date(`${date}T12:00:00`).toLocaleDateString('pt-BR');
+const formText = (data: Record<string, unknown>, key: string) =>
+  typeof data[key] === 'string' ? data[key] as string : '';
+const formChoice = (data: Record<string, unknown>, key: string) => {
+  const value = data[key];
+  if (typeof value === 'boolean') return value ? 'Sim' : 'Não';
+  return typeof value === 'string' ? value : '';
+};
+const formChecked = (data: Record<string, unknown>, key: string) =>
+  data[key] === true || data[key] === 'on' || data[key] === 'true';
 
 function FormPageTitle({ title, description }: { title: string; description: string }) {
   return (
@@ -47,22 +56,23 @@ function Text({ label, name, wide, optional, ...rest }: TextProps) {
   );
 }
 
-function TextArea({ label, name, rows = 3, optional, maxLength = 1000 }: { label: string; name: string; rows?: number; optional?: boolean; maxLength?: number }) {
+function TextArea({ label, name, rows = 3, optional, maxLength = 1000, defaultValue }: { label: string; name: string; rows?: number; optional?: boolean; maxLength?: number; defaultValue?: string }) {
   return (
     <label className={`${styles.field} ${styles.fieldWide}`}>
       <span>
         {label}
         {optional && <span className={styles.optional}> (opcional)</span>}
       </span>
-      <textarea name={name} rows={rows} maxLength={maxLength} />
+      <textarea name={name} rows={rows} maxLength={maxLength} defaultValue={defaultValue} />
     </label>
   );
 }
 
-function YesNo({ name, label, detailLabel = 'Qual?', withDetail = false, required = true }: {
+function YesNo({ name, label, detailLabel = 'Qual?', withDetail = false, required = true, defaultValue = '', detailValue }: {
   name: string; label: string; detailLabel?: string; withDetail?: boolean; required?: boolean;
+  defaultValue?: string; detailValue?: string;
 }) {
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(defaultValue);
   return (
     <fieldset className={`${styles.questionRow} ${styles.fieldWide}`}>
       <legend>{label}</legend>
@@ -77,62 +87,48 @@ function YesNo({ name, label, detailLabel = 'Qual?', withDetail = false, require
       {withDetail && value === 'Sim' && (
         <label className={styles.field}>
           {detailLabel}
-          <input name={`${name}Detalhe`} required maxLength={200} />
+          <input name={`${name}Detalhe`} required maxLength={200} defaultValue={detailValue} />
         </label>
       )}
     </fieldset>
   );
 }
 
-function Consent({ name, children }: { name: string; children: ReactNode }) {
+function Consent({ name, children, defaultChecked = false }: { name: string; children: ReactNode; defaultChecked?: boolean }) {
   return (
     <label className={`${styles.consent} ${styles.fieldWide}`}>
-      <input type="checkbox" name={name} required />
+      <input type="checkbox" name={name} required defaultChecked={defaultChecked} />
       <span>{children}</span>
     </label>
   );
 }
 
-function SignatureSection() {
+function SignatureSection({ parentName, savedData }: { parentName: string; savedData: Record<string, unknown> }) {
   return (
     <div className={styles.formSection}>
       <h2>Local, data e assinatura</h2>
-      <p>Ao digitar seu nome você confirma que as informações são verdadeiras. Nesta demonstração, isso não tem validade jurídica.</p>
+      <p>Revise as informações antes de preencher a assinatura.</p>
       <div className={styles.formGrid}>
-        <label className={styles.field}>Local<input name="local" value="Tatuí" readOnly /></label>
-        <label className={styles.field}>Data<input name="data" type="date" value={todayIso()} readOnly /></label>
-        <Text label="Nome do responsável legal (assinatura)" name="assinatura" wide required defaultValue={demoParent.name} autoComplete="name" />
+        <Text label="Nome do responsável legal (assinatura)" name="assinatura" wide required autoComplete="name" defaultValue={String(savedData.assinatura ?? parentName)} />
       </div>
     </div>
   );
 }
 
-function FichaShell({ title, description, beneficiaries, onSubmit, onCancel, children }: {
+function FichaShell({ title, description, enrollment, onSubmit, onCancel, children }: {
   title: string;
   description: string;
-  beneficiaries: Beneficiary[];
-  onSubmit: (beneficiaryId: string, data: FormData) => void;
+  enrollment: EnrollmentRecord;
+  onSubmit: (enrollmentId: string, data: FormData, saveDraft: boolean) => void;
   onCancel: () => void;
-  children: (beneficiary?: Beneficiary) => ReactNode;
+  children: (record: EnrollmentRecord) => ReactNode;
 }) {
-  const [beneficiaryId, setBeneficiaryId] = useState('');
-  const beneficiary = beneficiaries.find((item) => item.id === beneficiaryId);
-
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onSubmit(beneficiaryId, new FormData(event.currentTarget));
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    const saveDraft = submitter instanceof HTMLButtonElement && submitter.name === 'saveDraft';
+    onSubmit(enrollment.id, new FormData(event.currentTarget), saveDraft);
   };
-
-  if (!beneficiaries.length) {
-    return (
-      <>
-        <FormPageTitle title={title} description={description} />
-        <section className={styles.panel}>
-          <p className={styles.helperNote}>Cadastre um beneficiário primeiro para preencher esta ficha.</p>
-        </section>
-      </>
-    );
-  }
 
   return (
     <>
@@ -140,21 +136,16 @@ function FichaShell({ title, description, beneficiaries, onSubmit, onCancel, chi
       <form className={styles.panelForm} onSubmit={handleSubmit}>
         <div className={styles.formSection}>
           <h2>Beneficiário</h2>
-          <p>Escolha a criança a que esta ficha se refere.</p>
-          <label className={styles.field}>
-            Selecione o beneficiário
-            <select value={beneficiaryId} onChange={(event) => setBeneficiaryId(event.target.value)} required>
-              <option value="" disabled>Escolha uma opção</option>
-              {beneficiaries.map((item) => <option value={item.id} key={item.id}>{item.fullName}</option>)}
-            </select>
-          </label>
+          <p>Esta ficha será vinculada à matrícula selecionada.</p>
+          <strong>{enrollment.beneficiary.name}</strong>
         </div>
 
-        <div key={beneficiaryId || 'none'}>{children(beneficiary)}</div>
+        <div>{children(enrollment)}</div>
 
         <div className={styles.formFooter}>
           <button type="button" className={styles.buttonSecondary} onClick={onCancel}>Cancelar</button>
-          <button type="submit" className={styles.buttonPrimary}><Check size={17} /> Enviar ficha demonstrativa</button>
+          <button type="submit" name="saveDraft" value="true" formNoValidate className={styles.buttonSecondary}>Salvar parcialmente</button>
+          <button type="submit" className={styles.buttonPrimary}><Check size={17} /> Salvar ficha</button>
         </div>
       </form>
     </>
@@ -162,161 +153,30 @@ function FichaShell({ title, description, beneficiaries, onSubmit, onCancel, chi
 }
 
 interface FormProps {
-  beneficiaries: Beneficiary[];
-  onSubmit: (kind: FichaKind, beneficiaryId: string, data: FormData) => void;
+  enrollment: EnrollmentRecord;
+  savedData: Record<string, unknown>;
+  onSubmit: (kind: FichaKind, enrollmentId: string, data: FormData, saveDraft: boolean) => void;
   onCancel: () => void;
 }
 
-function ParentBlock({ prefix, title }: { prefix: 'pai' | 'mae'; title: string }) {
-  return (
-    <div className={styles.formSection}>
-      <h2>{title}</h2>
-      <p>Preencha se houver este responsável.</p>
-      <div className={styles.formGrid}>
-        <Text label="Nome" name={`${prefix}Nome`} wide />
-        <Text label="Telefone" name={`${prefix}Tel`} type="tel" autoComplete="tel" />
-        <Text label="Profissão" name={`${prefix}Profissao`} />
-        <Text label="Grau de escolaridade" name={`${prefix}Escolaridade`} />
-        <Text label="Salário (R$)" name={`${prefix}Salario`} inputMode="decimal" />
-        <Text label="Endereço comercial" name={`${prefix}EnderecoComercial`} wide />
-      </div>
-    </div>
-  );
-}
-
-function MatriculaForm({ beneficiaries, onSubmit, onCancel }: FormProps) {
-  return (
-    <FichaShell
-      title="Ficha de matrícula"
-      description="Preenchida pelo pai ou responsável. Revise os dados antes de enviar."
-      beneficiaries={beneficiaries}
-      onCancel={onCancel}
-      onSubmit={(id, data) => onSubmit('matricula', id, data)}
-    >
-      {(beneficiary) => (
-        <>
-          <div className={styles.formSection}>
-            <h2>Criança</h2>
-            <p>Dados pessoais, escolares e de saúde.</p>
-            <div className={styles.formGrid}>
-              <label className={`${styles.field} ${styles.fieldWide}`}>
-                Foto da criança
-                <input name="foto" type="file" accept="image/*" />
-              </label>
-              <Text label="Nome" name="nome" wide required defaultValue={beneficiary?.fullName} />
-              <Text label="Data de nascimento" name="nascimento" type="date" required defaultValue={beneficiary?.birthDate} max={todayIso()} />
-              <Text label="RG" name="rg" />
-              <Text label="CPF" name="cpf" inputMode="numeric" maxLength={14} placeholder="000.000.000-00" />
-              <Text label="Estuda na escola" name="escola" />
-              <Text label="Período" name="periodo" placeholder="Manhã, tarde…" />
-              <Text label="Série" name="serie" />
-              <YesNo name="problemaSaude" label="Tem algum problema de saúde?" withDetail />
-              <YesNo name="tratamentoMedico" label="Faz algum tratamento médico?" withDetail />
-              <YesNo name="alergia" label="Tem alergia?" withDetail />
-              <Text label="Que doenças ele(a) já teve?" name="doencasAnteriores" wide />
-            </div>
-          </div>
-
-          <ParentBlock prefix="pai" title="Responsável — Pai" />
-          <ParentBlock prefix="mae" title="Responsável — Mãe" />
-
-          <div className={styles.formSection}>
-            <h2>Renda e benefícios</h2>
-            <p>Informações usadas apenas para o estudo socioeconômico.</p>
-            <div className={styles.formGrid}>
-              <Text label="NIS" name="nis" inputMode="numeric" />
-              <Text label="Renda total (R$)" name="rendaTotal" inputMode="decimal" />
-              <Text label="Renda per capita (R$)" name="rendaPerCapita" inputMode="decimal" />
-              <YesNo name="beneficioGoverno" label="Recebe algum benefício do governo?" withDetail detailLabel="Qual?" />
-              <Text label="Valor do benefício (R$)" name="beneficioValor" inputMode="decimal" />
-            </div>
-          </div>
-
-          <div className={styles.formSection}>
-            <h2>Religião e composição familiar</h2>
-            <p>Liste as pessoas que moram com a criança (até 4).</p>
-            <div className={styles.formGrid}>
-              <Text label="Religião" name="religiao" wide />
-            </div>
-            {[1, 2, 3, 4].map((n) => (
-              <fieldset key={n} className={styles.repeatRow}>
-                <legend>Familiar {n}</legend>
-                <Text label="Nome" name={`familiar${n}Nome`} />
-                <Text label="Nascimento" name={`familiar${n}Nascimento`} type="date" max={todayIso()} />
-                <Text label="Parentesco" name={`familiar${n}Parentesco`} />
-                <Text label="Renda (R$)" name={`familiar${n}Renda`} inputMode="decimal" />
-              </fieldset>
-            ))}
-          </div>
-
-          <div className={styles.formSection}>
-            <h2>Endereço</h2>
-            <p>Moradia e despesas mensais da família.</p>
-            <div className={styles.formGrid}>
-              <Text label="Endereço residencial" name="endereco" wide required />
-              <Text label="Número" name="numero" required />
-              <Text label="Bairro" name="bairro" required />
-              <Text label="Ponto de referência" name="referencia" wide />
-              <label className={styles.field}>
-                Moradia
-                <select name="moradia" required defaultValue="">
-                  <option value="" disabled>Escolha uma opção</option>
-                  <option>Própria</option>
-                  <option>Cedida</option>
-                  <option>Alugada</option>
-                </select>
-              </label>
-              <Text label="Valor do aluguel (R$)" name="aluguel" inputMode="decimal" />
-              <Text label="Água (R$)" name="despesaAgua" inputMode="decimal" />
-              <Text label="Energia (R$)" name="despesaEnergia" inputMode="decimal" />
-              <Text label="Alimentação (R$)" name="despesaAlimentacao" inputMode="decimal" />
-              <Text label="Gás (R$)" name="despesaGas" inputMode="decimal" />
-            </div>
-          </div>
-
-          <div className={styles.formSection}>
-            <h2>Autorização de frequência</h2>
-            <div className={styles.formGrid}>
-              <Consent name="autorizaFrequencia">
-                Autorizo meu filho(a) a frequentar de segunda a sexta-feira, das 13h às 17h, o Projeto Samaritano, pelo prazo de 1 mês de
-                adaptação, bem como participar de todas as atividades do Plano anual, passeios e atividades fora da Associação Recanto Betel,
-                acompanhados(as) pela educadora, funcionários e voluntários.
-              </Consent>
-            </div>
-          </div>
-
-          <div className={styles.formSection}>
-            <h2>Matrículas e rematrículas</h2>
-            <p>Registro da matrícula. Rematrículas futuras serão adicionadas pela equipe.</p>
-            <div className={styles.formGrid}>
-              <label className={styles.field}>Data<input name="dataMatricula" type="date" value={todayIso()} readOnly /></label>
-              <Text label="Responsável (assinatura)" name="assinatura" required defaultValue={demoParent.name} autoComplete="name" />
-            </div>
-          </div>
-        </>
-      )}
-    </FichaShell>
-  );
-}
-
-function TermoForm({ beneficiaries, onSubmit, onCancel }: FormProps) {
-  const [sozinho, setSozinho] = useState('');
+function TermoForm({ enrollment, savedData, onSubmit, onCancel }: FormProps) {
+  const [sozinho, setSozinho] = useState(formText(savedData, 'irEmboraSozinho'));
   return (
     <FichaShell
       title="Termo de compromisso"
       description="Compromissos a serem cumpridos pelo responsável."
-      beneficiaries={beneficiaries}
+      enrollment={enrollment}
       onCancel={onCancel}
-      onSubmit={(id, data) => onSubmit('termo', id, data)}
+      onSubmit={(id, data, saveDraft) => onSubmit('termo', id, data, saveDraft)}
     >
-      {() => (
+      {(record) => (
         <>
           <div className={styles.formSection}>
             <h2>Compromissos</h2>
             <p>Leia e marque cada item para concordar.</p>
             <div className={styles.formGrid}>
-              <Consent name="compromisso1">1º Devo respeitar e cumprir todas as normas do Regulamento do Projeto Samaritano e incentivar meus filhos a cumpri-las também.</Consent>
-              <Consent name="compromisso2">2º Estou ciente de que é importante participar de todas as convocações.</Consent>
+              <Consent name="compromisso1" defaultChecked={formChecked(savedData, 'compromisso1')}>1º Devo respeitar e cumprir todas as normas do Regulamento do Projeto Samaritano e incentivar meus filhos a cumpri-las também.</Consent>
+              <Consent name="compromisso2" defaultChecked={formChecked(savedData, 'compromisso2')}>2º Estou ciente de que é importante participar de todas as convocações.</Consent>
               <fieldset className={`${styles.questionRow} ${styles.fieldWide}`}>
                 <legend>3º Autorizo meu filho(a) a ir embora sozinho(a)?</legend>
                 <div className={styles.radioGroup}>
@@ -338,59 +198,59 @@ function TermoForm({ beneficiaries, onSubmit, onCancel }: FormProps) {
               {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                 <fieldset key={n} className={styles.repeatRow3}>
                   <legend>Pessoa {n}</legend>
-                  <Text label="Nome" name={`pessoa${n}Nome`} required={n === 1} optional={n !== 1} />
-                  <Text label="Parentesco" name={`pessoa${n}Parentesco`} required={n === 1} optional={n !== 1} />
-                  <Text label="Telefone" name={`pessoa${n}Tel`} type="tel" required={n === 1} optional={n !== 1} />
+                  <Text label="Nome" name={`pessoa${n}Nome`} required={n === 1} optional={n !== 1} defaultValue={formText(savedData, `pessoa${n}Nome`)} />
+                  <Text label="Parentesco" name={`pessoa${n}Parentesco`} required={n === 1} optional={n !== 1} defaultValue={formText(savedData, `pessoa${n}Parentesco`)} />
+                  <Text label="Telefone" name={`pessoa${n}Tel`} type="tel" required={n === 1} optional={n !== 1} defaultValue={formText(savedData, `pessoa${n}Tel`)} />
                 </fieldset>
               ))}
             </div>
           )}
 
-          <SignatureSection />
+          <SignatureSection parentName={record.parent?.name ?? ''} savedData={savedData} />
         </>
       )}
     </FichaShell>
   );
 }
 
-function AutorizacaoForm({ beneficiaries, onSubmit, onCancel }: FormProps) {
+function AutorizacaoForm({ enrollment, savedData, onSubmit, onCancel }: FormProps) {
   return (
     <FichaShell
       title="Autorização de atendimento"
       description="Autorização para avaliação e procedimentos odontológicos."
-      beneficiaries={beneficiaries}
+      enrollment={enrollment}
       onCancel={onCancel}
-      onSubmit={(id, data) => onSubmit('autorizacao', id, data)}
+      onSubmit={(id, data, saveDraft) => onSubmit('autorizacao', id, data, saveDraft)}
     >
-      {(beneficiary) => (
+      {(record) => (
         <>
           <div className={styles.formSection}>
             <h2>Responsável</h2>
             <div className={styles.formGrid}>
-              <Text label="Nome do responsável" name="responsavelNome" required defaultValue={demoParent.name} autoComplete="name" />
-              <Text label="CPF do responsável" name="responsavelCpf" required inputMode="numeric" maxLength={14} placeholder="000.000.000-00" />
+              <Text label="Nome do responsável" name="responsavelNome" required autoComplete="name" defaultValue={formText(savedData, 'responsavelNome') || record.parent?.name} />
+              <Text label="CPF do responsável" name="responsavelCpf" required inputMode="numeric" maxLength={14} placeholder="000.000.000-00" defaultValue={formText(savedData, 'responsavelCpf') || record.parent?.cpf} />
             </div>
           </div>
 
           <div className={styles.formSection}>
             <h2>Menor</h2>
             <div className={styles.formGrid}>
-              <Text label="Nome do menor" name="menorNome" required defaultValue={beneficiary?.fullName} />
-              <Text label="CPF do menor" name="menorCpf" required inputMode="numeric" maxLength={14} placeholder="000.000.000-00" />
+              <Text label="Nome do menor" name="menorNome" required defaultValue={formText(savedData, 'menorNome') || record.beneficiary.name} />
+              <Text label="CPF do menor" name="menorCpf" required inputMode="numeric" maxLength={14} placeholder="000.000.000-00" defaultValue={formText(savedData, 'menorCpf') || record.beneficiary.cpf} />
             </div>
           </div>
 
           <div className={styles.formSection}>
             <h2>Autorização</h2>
             <div className={styles.formGrid}>
-              <Consent name="autorizaOdonto">
+              <Consent name="autorizaOdonto" defaultChecked={formChecked(savedData, 'autorizaOdonto')}>
                 Autorizo o(a) menor acima a passar por avaliação e procedimentos odontológicos que sejam julgados necessários pela
                 Dra. Gisele Barreto (CROSP 121197), a qual realizará os mesmos no recinto Recanto Betel.
               </Consent>
             </div>
           </div>
 
-          <SignatureSection />
+          <SignatureSection parentName={record.parent?.name ?? ''} savedData={savedData} />
         </>
       )}
     </FichaShell>
@@ -409,21 +269,21 @@ const DOENCAS: [string, string][] = [
   ['hipertensao', 'Hipertensão arterial'],
 ];
 
-function AnamneseForm({ beneficiaries, onSubmit, onCancel }: FormProps) {
+function AnamneseForm({ enrollment, savedData, onSubmit, onCancel }: FormProps) {
   return (
     <FichaShell
       title="Ficha de anamnese"
       description="Questionário de saúde. Responda com atenção: as informações ajudam no cuidado da criança."
-      beneficiaries={beneficiaries}
+      enrollment={enrollment}
       onCancel={onCancel}
-      onSubmit={(id, data) => onSubmit('anamnese', id, data)}
+      onSubmit={(id, data, saveDraft) => onSubmit('anamnese', id, data, saveDraft)}
     >
-      {() => (
+      {(record) => (
         <>
           <div className={styles.formSection}>
             <h2>Queixa principal</h2>
             <div className={styles.formGrid}>
-              <TextArea label="Queixa principal e evolução da doença atual" name="queixaPrincipal" optional />
+              <TextArea label="Queixa principal e evolução da doença atual" name="queixaPrincipal" optional defaultValue={formText(savedData, 'queixaPrincipal')} />
             </div>
           </div>
 
@@ -431,51 +291,52 @@ function AnamneseForm({ beneficiaries, onSubmit, onCancel }: FormProps) {
             <h2>Questionário de saúde</h2>
             <p>Responda Sim ou Não. Quando for Sim, informe qual.</p>
             <div className={styles.formGrid}>
-              <YesNo name="doenca" label="Sofre de alguma doença?" withDetail />
-              <YesNo name="tratamento" label="Está em tratamento médico atualmente?" />
-              <YesNo name="gravidez" label="Gravidez (se aplicável)" required={false} />
-              <YesNo name="medicacao" label="Está fazendo uso de alguma medicação?" withDetail />
-              <Text label="Nome do médico assistente e telefone" name="medico" wide optional />
-              <YesNo name="alergia" label="Teve alergia?" withDetail detailLabel="Quais?" />
-              <YesNo name="operado" label="Já foi operado?" withDetail detailLabel="Quais?" />
-              <YesNo name="cicatrizacao" label="Teve problemas com a cicatrização?" />
-              <YesNo name="anestesia" label="Teve problemas com anestesia?" />
-              <YesNo name="hemorragia" label="Teve problemas de hemorragia?" />
+              <YesNo name="doenca" label="Sofre de alguma doença?" withDetail defaultValue={formChoice(savedData, 'doenca')} detailValue={formText(savedData, 'doencaDetalhe')} />
+              <YesNo name="tratamento" label="Está em tratamento médico atualmente?" defaultValue={formChoice(savedData, 'tratamento')} />
+              <YesNo name="gravidez" label="Gravidez (se aplicável)" required={false} defaultValue={formChoice(savedData, 'gravidez')} />
+              <YesNo name="medicacao" label="Está fazendo uso de alguma medicação?" withDetail defaultValue={formChoice(savedData, 'medicacao')} detailValue={formText(savedData, 'medicacaoDetalhe')} />
+              <Text label="Nome do médico assistente" name="medicoNome" optional defaultValue={formText(savedData, 'medicoNome')} />
+              <Text label="Telefone do médico assistente" name="medicoTelefone" type="tel" optional defaultValue={formText(savedData, 'medicoTelefone')} />
+              <YesNo name="alergia" label="Teve alergia?" withDetail detailLabel="Quais?" defaultValue={formChoice(savedData, 'alergia')} detailValue={formText(savedData, 'alergiaDetalhe')} />
+              <YesNo name="operado" label="Já foi operado?" withDetail detailLabel="Quais?" defaultValue={formChoice(savedData, 'operado')} detailValue={formText(savedData, 'operadoDetalhe')} />
+              <YesNo name="cicatrizacao" label="Teve problemas com a cicatrização?" defaultValue={formChoice(savedData, 'cicatrizacao')} />
+              <YesNo name="anestesia" label="Teve problemas com anestesia?" defaultValue={formChoice(savedData, 'anestesia')} />
+              <YesNo name="hemorragia" label="Teve problemas de hemorragia?" defaultValue={formChoice(savedData, 'hemorragia')} />
             </div>
           </div>
 
           <div className={styles.formSection}>
             <h2>Sofre de algumas das seguintes doenças?</h2>
             <div className={styles.formGrid}>
-              {DOENCAS.map(([name, label]) => <YesNo key={name} name={`doencas_${name}`} label={label} />)}
+              {DOENCAS.map(([name, label]) => <YesNo key={name} name={`doencas_${name}`} label={label} defaultValue={formChoice(savedData, `doencas_${name}`)} />)}
             </div>
           </div>
 
           <div className={styles.formSection}>
             <h2>Outras informações</h2>
             <div className={styles.formGrid}>
-              <Text label="Hábitos" name="habitos" wide optional />
-              <TextArea label="Antecedentes familiares" name="antecedentesFamiliares" optional />
-              <TextArea label="Outras informações" name="outrasInformacoes" optional />
-              <Consent name="declaracao">Declaro que as informações acima prestadas são totalmente verdadeiras.</Consent>
+              <Text label="Hábitos" name="habitos" wide optional defaultValue={formText(savedData, 'habitos')} />
+              <TextArea label="Antecedentes familiares" name="antecedentesFamiliares" optional defaultValue={formText(savedData, 'antecedentesFamiliares')} />
+              <TextArea label="Outras informações" name="outrasInformacoes" optional defaultValue={formText(savedData, 'outrasInformacoes')} />
+              <Consent name="declaracao" defaultChecked={formChecked(savedData, 'declaracao')}>Declaro que as informações acima prestadas são totalmente verdadeiras.</Consent>
             </div>
           </div>
 
-          <SignatureSection />
+          <SignatureSection parentName={record.parent?.name ?? ''} savedData={savedData} />
         </>
       )}
     </FichaShell>
   );
 }
 
-function RelatosForm({ beneficiaries, onSubmit, onCancel }: FormProps) {
+function RelatosForm({ enrollment, savedData, onSubmit, onCancel }: FormProps) {
   return (
     <FichaShell
       title="Relatos"
       description="Registre observações ou relatos sobre o beneficiário."
-      beneficiaries={beneficiaries}
+      enrollment={enrollment}
       onCancel={onCancel}
-      onSubmit={(id, data) => onSubmit('relatos', id, data)}
+      onSubmit={(id, data, saveDraft) => onSubmit('relatos', id, data, saveDraft)}
     >
       {() => (
         <div className={styles.formSection}>
@@ -485,7 +346,7 @@ function RelatosForm({ beneficiaries, onSubmit, onCancel }: FormProps) {
             <label className={styles.field}>Data<input name="data" type="date" value={todayIso()} readOnly /></label>
             <label className={`${styles.field} ${styles.fieldWide}`}>
               Relato
-              <textarea name="relato" rows={10} maxLength={2000} required placeholder="Escreva aqui o relato." />
+              <textarea name="relato" rows={10} maxLength={2000} required defaultValue={formText(savedData, 'relato')} placeholder="Escreva aqui o relato." />
             </label>
           </div>
         </div>
@@ -494,64 +355,115 @@ function RelatosForm({ beneficiaries, onSubmit, onCancel }: FormProps) {
   );
 }
 
-export function FichasHub({ submissions, beneficiaries, navigate }: {
-  submissions: FichaSubmission[];
-  beneficiaries: Beneficiary[];
+export function FichasHub({ enrollments, navigate }: {
+  enrollments: EnrollmentRecord[];
   navigate: (to: string) => void;
 }) {
   return (
     <>
-      <FormPageTitle title="Fichas" description="Preencha as fichas do Recanto Betel online, sem precisar imprimir." />
-      <div className={styles.contentGrid}>
-        <section className={styles.panel}>
-          <div className={styles.panelHeading}><div><h2>Fichas disponíveis</h2><p>Escolha qual ficha deseja preencher</p></div></div>
+      <FormPageTitle title="Fichas" description="Acompanhe e continue o preenchimento das fichas vinculadas a cada matrícula." />
+      {enrollments.length ? enrollments.map((enrollment) => (
+        <section className={styles.panel} key={enrollment.id}>
+          <div className={styles.panelHeading}>
+            <div><h2>{enrollment.beneficiary.name}</h2><p>Matrícula {enrollment.publicCode}</p></div>
+            <span className={styles.badge}>{enrollment.formsComplete ? 'Fichas completas' : 'Fichas pendentes'}</span>
+          </div>
           <div className={styles.activityList}>
-            {FICHAS.map(({ kind, title, description, icon: Icon }) => (
-              <button key={kind} type="button" className={styles.activityItem} onClick={() => navigate(`/portal/fichas/${kind}`)}>
-                <span className={styles.activityIcon}><Icon size={17} /></span>
-                <span className={styles.activityText}><strong>{title}</strong><small>{description}</small></span>
-                <ArrowRight size={16} className={styles.rowArrow} />
-              </button>
-            ))}
+            {FICHAS.map(({ kind, title, description, icon: Icon }) => {
+              const status = enrollment.formsStatus.find((item) => item.kind === kind);
+              const href = kind === 'matricula'
+                ? `/portal/matriculas/${enrollment.id}/editar`
+                : `/portal/matriculas/${enrollment.id}/fichas/${kind}`;
+              return (
+                <button key={kind} type="button" className={styles.activityItem} onClick={() => navigate(href)}>
+                  <span className={styles.activityIcon}><Icon size={17} /></span>
+                  <span className={styles.activityText}><strong>{title}</strong><small>{description}</small></span>
+                  <span className={styles.formStatus}>{statusLabel(status?.status ?? 'PENDING')}{status?.required ? ' · obrigatória' : ' · opcional'}</span>
+                  <ArrowRight size={16} className={styles.rowArrow} />
+                </button>
+              );
+            })}
           </div>
         </section>
-
+      )) : (
         <section className={styles.panel}>
-          <div className={styles.panelHeading}><div><h2>Enviadas nesta sessão</h2><p>Não persistem após recarregar</p></div></div>
-          {submissions.length ? (
-            <div className={styles.activityList}>
-              {submissions.map((item) => {
-                const meta = FICHAS.find((ficha) => ficha.kind === item.kind);
-                const beneficiary = beneficiaries.find((entry) => entry.id === item.beneficiaryId);
-                return (
-                  <div key={item.id} className={styles.activityItem}>
-                    <span className={styles.activityIcon}><Check size={17} /></span>
-                    <span className={styles.activityText}>
-                      <strong>{meta?.title}</strong>
-                      <small>{beneficiary?.fullName} · enviada em {formatDate(item.submittedAt)} · {item.id}</small>
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className={styles.helperNote}>Nenhuma ficha enviada ainda.</p>
-          )}
+          <p className={styles.helperNote}>Inicie uma matrícula para acessar e preencher as fichas relacionadas.</p>
         </section>
-      </div>
+      )}
     </>
   );
 }
 
-export function FichaPage({ kind, beneficiaries, onSubmit, navigate }: {
+function statusLabel(status: string): string {
+  if (status === 'COMPLETE') return 'Preenchida';
+  if (status === 'INCOMPLETE') return 'Incompleta';
+  return 'Pendente';
+}
+
+function anamneseData(record: EnrollmentRecord): Record<string, unknown> {
+  const data = record.anamnese;
+  if (!data) return {};
+  const result: Record<string, unknown> = {
+    queixaPrincipal: data.mainComplaintEvolution,
+    doencaDetalhe: data.diseaseDescription,
+    medicacaoDetalhe: data.medicationDescription,
+    medicoNome: data.attendingPhysicianName,
+    medicoTelefone: data.attendingPhysicianPhone,
+    alergiaDetalhe: data.allergiesDescription,
+    operadoDetalhe: data.surgeriesDescription,
+    habitos: data.habits,
+    antecedentesFamiliares: data.familyHistory,
+    outrasInformacoes: data.otherInformation,
+    declaracao: data.declarationAccepted,
+    assinatura: data.responsibleSignature,
+  };
+  const fields: Record<string, string> = {
+    doenca: 'suffersFromDisease',
+    tratamento: 'underMedicalTreatment',
+    gravidez: 'isPregnant',
+    medicacao: 'usesMedication',
+    alergia: 'hasAllergies',
+    operado: 'hasHadSurgery',
+    cicatrizacao: 'healingProblems',
+    anestesia: 'anesthesiaProblems',
+    hemorragia: 'hemorrhageProblems',
+    'doencas_febreReumatica': 'rheumaticFever',
+    'doencas_cardiacos': 'heartProblems',
+    'doencas_renais': 'kidneyProblems',
+    'doencas_gastricos': 'gastricProblems',
+    'doencas_respiratorios': 'respiratoryProblems',
+    'doencas_alergicos': 'allergicProblems',
+    'doencas_articulares': 'jointRheumatismProblems',
+    'doencas_diabetes': 'diabetes',
+    'doencas_hipertensao': 'arterialHypertension',
+  };
+  for (const [formKey, apiKey] of Object.entries(fields)) {
+    const value = data[apiKey];
+    if (typeof value === 'boolean') result[formKey] = value;
+  }
+  return result;
+}
+
+export function FichaPage({ kind, enrollment, onSubmit, navigate }: {
   kind?: string;
-  beneficiaries: Beneficiary[];
-  onSubmit: (kind: FichaKind, beneficiaryId: string, data: FormData) => void;
+  enrollment?: EnrollmentRecord;
+  onSubmit: (kind: FichaKind, enrollmentId: string, data: FormData, saveDraft: boolean) => void;
   navigate: (to: string) => void;
 }) {
-  const props: FormProps = { beneficiaries, onSubmit, onCancel: () => navigate('/portal/fichas') };
+  if (!enrollment) {
+    return <section className={styles.panel}><p className={styles.helperNote}>A matrícula não está disponível para sua conta.</p><button className={styles.buttonSecondary} type="button" onClick={() => navigate('/portal/matriculas')}>Voltar para matrículas</button></section>;
+  }
+  const savedFormKind = kind === 'termo' ? 'TERMO' : kind === 'autorizacao' ? 'AUTORIZACAO' : 'RELATOS';
+  const savedData = kind === 'anamnese'
+    ? anamneseData(enrollment)
+    : enrollment.forms.find((form) => form.kind === savedFormKind)?.data ?? {};
+  const props: FormProps = {
+    enrollment,
+    savedData,
+    onSubmit,
+    onCancel: () => navigate(`/portal/matriculas/${enrollment.id}`),
+  };
   switch (kind) {
-    case 'matricula': return <MatriculaForm {...props} />;
     case 'termo': return <TermoForm {...props} />;
     case 'autorizacao': return <AutorizacaoForm {...props} />;
     case 'anamnese': return <AnamneseForm {...props} />;
@@ -559,8 +471,8 @@ export function FichaPage({ kind, beneficiaries, onSubmit, navigate }: {
     default:
       return (
         <section className={styles.panel}>
-          <p className={styles.helperNote}>Ficha não encontrada.</p>
-          <button className={styles.buttonSecondary} type="button" onClick={() => navigate('/portal/fichas')}>Voltar para fichas</button>
+          <p className={styles.helperNote}>Ficha não encontrada para esta matrícula.</p>
+          <button className={styles.buttonSecondary} type="button" onClick={() => navigate(`/portal/matriculas/${enrollment.id}`)}>Voltar para a matrícula</button>
         </section>
       );
   }

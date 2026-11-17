@@ -4,6 +4,7 @@ import { PrismaService } from '../database/prisma.service.js';
 import { ICreateParent } from './dto/parent-create.dto.js';
 import { IFindParent } from './dto/parent-find.dto.js';
 import { IUpdateParent } from './dto/parent-update.dto.js';
+import { createPublicCode } from '../common/public-codes.js';
 
 @Injectable()
 export class ParentService {
@@ -13,6 +14,7 @@ export class ParentService {
         try {
             const parent = await this.PrismaService.parent.create({
                 data: {
+                    publicCode: createPublicCode('RES'),
                     name: data.name,
                     cpf: data.cpf,
                     contact: data.contact,

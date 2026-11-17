@@ -273,7 +273,7 @@ export const Transparency: React.FC<TransparencyProps> = ({ onShowToast }) => {
                 borderRadius: '9999px',
                 border: '1px solid #CBD5E1',
                 backgroundColor: '#FFFFFF',
-                color: '#174A6E',
+                color: '#093273',
                 fontWeight: 600,
                 cursor: 'pointer',
               }}
@@ -291,7 +291,7 @@ export const Transparency: React.FC<TransparencyProps> = ({ onShowToast }) => {
                 borderRadius: '9999px',
                 border: 'none',
                 backgroundColor: '#F4C542',
-                color: '#0D2B40',
+                color: '#061E46',
                 fontWeight: 700,
                 cursor: 'pointer',
               }}
@@ -316,7 +316,7 @@ export const Transparency: React.FC<TransparencyProps> = ({ onShowToast }) => {
                 padding: '20px',
               }}
             >
-              <h4 style={{ color: '#174A6E', fontSize: '1rem', marginBottom: '8px' }}>
+              <h4 style={{ color: '#093273', fontSize: '1rem', marginBottom: '8px' }}>
                 Resumo do Documento Registrado
               </h4>
               <p style={{ color: '#53697D', fontSize: '0.95rem', lineHeight: '1.6' }}>
@@ -353,7 +353,7 @@ export const Transparency: React.FC<TransparencyProps> = ({ onShowToast }) => {
               }}
             >
               <FileCheck2 size={36} color="#79B98A" />
-              <span style={{ fontWeight: 600, color: '#174A6E' }}>
+              <span style={{ fontWeight: 600, color: '#093273' }}>
                 Documento Oficial Autenticado digitalmente
               </span>
               <span style={{ fontSize: '0.8125rem' }}>

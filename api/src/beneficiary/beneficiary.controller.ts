@@ -1,19 +1,23 @@
 import { 
   Controller,
+  Get,
   Post,
   Put,
   Delete,
   Patch,
   Body,
   Res,
+  Req,
   Param,
   HttpCode,
   HttpStatus,
-  UseGuards
+  UseGuards,
 } from '@nestjs/common';
 import { BeneficiaryService } from './beneficiary.service.js';
 import { Roles } from '../auth/roles.decorator.js';
 import { RolesGuard } from '../auth/roles.guard.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import type { AuthenticatedRequest } from '../auth/authenticated-user.js';
 
 import type { Response } from "express";
 import type { ICreateBeneficiary } from './dto/beneficiary-create.dto.js';
@@ -21,8 +25,16 @@ import type { IFindBeneficiary } from './dto/beneficiary-find.dto.js';
 import type { IUpdateBeneficiary } from './dto/beneficiary-update.dto.js';
 
 @Controller('beneficiary')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN')
 export class BeneficiaryController {
   constructor(private readonly beneficiaryService: BeneficiaryService) {}
+
+  @Get('mine')
+  @Roles('USER', 'PARENT')
+  async listMine(@Req() request: AuthenticatedRequest) {
+    return this.beneficiaryService.listMine(request.user);
+  }
 
   @Post("")
   @HttpCode(HttpStatus.CREATED)

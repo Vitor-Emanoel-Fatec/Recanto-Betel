@@ -1,6 +1,6 @@
 import React from 'react';
-import { Heart } from 'lucide-react';
 import styles from './Footer.module.scss';
+import logoRecanto from '../../assets/Logo-Reverse.svg';
 
 interface FooterProps {
   onOpenSupportModal?: () => void;
@@ -19,12 +19,10 @@ export const Footer: React.FC<FooterProps> = ({ onOpenSupportModal }) => {
       <div className="section-container">
         {/* Layout Principal: 3 Colunas */}
         <div className={styles.mainGrid}>
-          {/* Coluna 1 (Esquerda): Logo com ícone de coração azul dentro de círculo amarelo + descrição + badge */}
+          {/* Coluna 1 (Esquerda): Logo institucional + descrição + badge */}
           <div className={styles.brandCol}>
             <a href="#inicio" className={styles.footerLogo} onClick={(e) => { e.preventDefault(); scrollTo('inicio'); }}>
-              <div className={styles.yellowCircleIcon} aria-hidden="true">
-                <Heart className={styles.blueHeart} size={22} fill="#174A6E" />
-              </div>
+              <img className={styles.footerLogoImage} src={logoRecanto} alt="" aria-hidden="true" />
               <div className={styles.logoTextGroup}>
                 <span className={styles.associationPrefix}>ASSOCIAÇÃO</span>
                 <span className={styles.brandName}>Recanto Betel</span>
@@ -66,11 +64,11 @@ export const Footer: React.FC<FooterProps> = ({ onOpenSupportModal }) => {
                   Impacto
                 </button>
               </li>
-              <li>
+              {/* <li>
                 <button type="button" onClick={() => scrollTo('transparencia')}>
                   Transparência
                 </button>
-              </li>
+              </li> */}
               <li>
                 <button type="button" onClick={() => scrollTo('noticias')}>
                   Notícias

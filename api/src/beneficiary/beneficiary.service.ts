@@ -8,6 +8,8 @@ import { IFindBeneficiary } from './dto/beneficiary-find.dto.js';
 import { IUpdateBeneficiary } from './dto/beneficiary-update.dto.js';
 import { AnamneseService } from '../anamnese/anamnese.service.js';
 import { RelativiesService } from '../relativies/relativies.service.js';
+import { createPublicCode } from '../common/public-codes.js';
+import type { AuthenticatedUser } from '../auth/authenticated-user.js';
 
 @Injectable()
 export class BeneficiaryService {
@@ -23,6 +25,7 @@ export class BeneficiaryService {
             const date = new Date(data.birthday).toISOString();
             const beneficiary = await this.PrismaService.beneficiary.create({
                 data: {
+                    publicCode: createPublicCode('BEN'),
                     name: data.name,
                     birthday: date,
                     rg: data.rg,
@@ -65,7 +68,7 @@ export class BeneficiaryService {
                 }
             })
             
-            const anamnese_form = await this.AnamneseService.create({
+            const anamnese_form = await this.AnamneseService.createForBeneficiary({
                 ...data.anamnese,
                 beneficiary_id: beneficiary.id
             });
@@ -105,6 +108,27 @@ export class BeneficiaryService {
         } catch(E: any) {
             throw new InternalServerErrorException("Erro ao tentar encontrar beneficiário");
         }
+    }
+
+    async listMine(user: AuthenticatedUser) {
+        const parent = await this.PrismaService.parent.findUnique({
+            where: { user_id: user.id },
+            select: { id: true },
+        });
+        if (!parent) return [];
+
+        return this.PrismaService.beneficiary.findMany({
+            where: { parent: { some: { parent_id: parent.id } } },
+            select: {
+                id: true,
+                publicCode: true,
+                name: true,
+                birthday: true,
+                status: true,
+                updatedAt: true,
+            },
+            orderBy: { updatedAt: 'desc' },
+        });
     }
 
     async updateBeneficiary(id: string, data: IUpdateBeneficiary): Promise<void> {

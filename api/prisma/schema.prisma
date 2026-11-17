@@ -12,7 +12,10 @@ model User {
   email    String  @unique
   password String
   role     String  @default("USER")
+  termsAcceptedVersion String? @db.VarChar(32)
+  termsAcceptedAt DateTime?
   parent   Parent?
+  enrollmentEvents EnrollmentEvent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -24,12 +27,32 @@ enum BeneficiaryStatus {
   REJECTED
 }
 
+enum EnrollmentStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum EnrollmentEventType {
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  RETURNED_TO_PENDING
+}
+
+enum EnrollmentFormKind {
+  TERMO
+  AUTORIZACAO
+  RELATOS
+}
+
 model Beneficiary {
   id                String              @id @default(uuid())
+  publicCode        String              @unique @db.VarChar(32)
   name              String
   birthday          DateTime            @db.Date
   rg                Int
-  cpf               Int                 @unique
+  cpf               String              @unique @db.VarChar(11)
   school            String
   period            String
   religion          String
@@ -41,6 +64,7 @@ model Beneficiary {
   relativies        Relatives[]
   parent            ParentBenificiary[]
   AuthorizedEscorts AuthorizedEscorts[]
+  enrollments       Enrollment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -101,39 +125,44 @@ model AuthorizedEscorts {
 model Anamnese {
   id             String @id @default(uuid())
   beneficiary_id String @unique
+  enrollment_id  String? @unique
 
-  mainComplaintEvolution  String  @db.Text
-  suffersFromDisease      Boolean
+  mainComplaintEvolution  String? @db.Text
+  suffersFromDisease      Boolean?
   diseaseDescription      String?
-  underMedicalTreatment   Boolean
-  isPregnant              Boolean @default(false)
-  usesMedication          Boolean
+  underMedicalTreatment   Boolean?
+  isPregnant              Boolean? @default(false)
+  usesMedication          Boolean?
   medicationDescription   String?
   attendingPhysicianName  String?
   attendingPhysicianPhone String?
-  hasAllergies            Boolean
+  hasAllergies            Boolean?
   allergiesDescription    String?
-  hasHadSurgery           Boolean
+  hasHadSurgery           Boolean?
   surgeriesDescription    String?
-  healingProblems         Boolean
-  anesthesiaProblems      Boolean
-  hemorrhageProblems      Boolean
+  healingProblems         Boolean?
+  anesthesiaProblems      Boolean?
+  hemorrhageProblems      Boolean?
 
-  rheumaticFever          Boolean @default(false)
-  heartProblems           Boolean @default(false)
-  kidneyProblems          Boolean @default(false)
-  gastricProblems         Boolean @default(false)
-  respiratoryProblems     Boolean @default(false)
-  allergicProblems        Boolean @default(false)
-  jointRheumatismProblems Boolean @default(false)
-  diabetes                Boolean @default(false)
-  arterialHypertension    Boolean @default(false)
+  rheumaticFever          Boolean?
+  heartProblems           Boolean?
+  kidneyProblems          Boolean?
+  gastricProblems         Boolean?
+  respiratoryProblems     Boolean?
+  allergicProblems        Boolean?
+  jointRheumatismProblems Boolean?
+  diabetes                Boolean?
+  arterialHypertension    Boolean?
 
   habits           String? @db.Text
   familyHistory    String? @db.Text
   otherInformation String? @db.Text
+  declarationAccepted Boolean?
+  responsibleSignature String? @db.VarChar(191)
+  isComplete       Boolean @default(false)
 
   beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
+  enrollment  Enrollment?  @relation(fields: [enrollment_id], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -141,9 +170,10 @@ model Anamnese {
 
 model Parent {
   id                String              @id @default(uuid())
+  publicCode        String              @unique @db.VarChar(32)
   user_id           String?             @unique
   name              String
-  cpf               Int                 @unique
+  cpf               String              @unique @db.VarChar(11)
   contact           String
   email             String              @unique
   profession        String?
@@ -152,6 +182,7 @@ model Parent {
   salary            Decimal?            @db.Decimal(10, 2)
   user              User?               @relation(fields: [user_id], references: [id])
   beneficiary       ParentBenificiary[]
+  enrollments       Enrollment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -162,7 +193,7 @@ model Relatives {
   beneficiary_id String
   name           String
   birthday       DateTime
-  relation       Int
+  relation       String   @db.VarChar(191)
   salary         Decimal  @db.Decimal(10, 2)
 
   beneficiary Beneficiary? @relation(fields: [beneficiary_id], references: [id])
@@ -174,12 +205,65 @@ model Relatives {
 model ParentBenificiary {
   id               String @id @default(uuid())
   beneficiary_id   String
-  parent_id        String @unique
-  relationshipType Int
+  parent_id        String
+  relationshipType String @db.VarChar(191)
 
   beneficiary Beneficiary @relation(fields: [beneficiary_id], references: [id])
   parent      Parent      @relation(fields: [parent_id], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@unique([beneficiary_id, parent_id])
+}
+
+model Enrollment {
+  id             String          @id @default(uuid())
+  publicCode     String          @unique @db.VarChar(32)
+  parent_id      String
+  beneficiary_id String
+  status         EnrollmentStatus @default(PENDING)
+  termsAcceptedVersion String?   @db.VarChar(32)
+  termsAcceptedAt DateTime?
+  decisionNote   String?         @db.Text
+  submittedAt    DateTime        @default(now())
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  parent      Parent               @relation(fields: [parent_id], references: [id])
+  beneficiary Beneficiary          @relation(fields: [beneficiary_id], references: [id])
+  history     EnrollmentEvent[]
+  forms       EnrollmentForm[]
+  anamnese    Anamnese?
+
+  @@index([parent_id, status])
+  @@index([beneficiary_id, status])
+}
+
+model EnrollmentForm {
+  id            String            @id @default(uuid())
+  enrollment_id String
+  kind          EnrollmentFormKind
+  data          Json
+  isComplete    Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollment_id], references: [id], onDelete: Cascade)
+
+  @@unique([enrollment_id, kind])
+}
+
+model EnrollmentEvent {
+  id            String             @id @default(uuid())
+  enrollment_id String
+  actor_id      String?
+  type          EnrollmentEventType
+  note          String?            @db.Text
+  createdAt     DateTime           @default(now())
+
+  enrollment Enrollment @relation(fields: [enrollment_id], references: [id])
+  actor      User?      @relation(fields: [actor_id], references: [id], onDelete: SetNull)
+
+  @@index([enrollment_id, createdAt])
 }

@@ -115,10 +115,10 @@
 
 /* Section: O que acontece no Recanto? */
 .journeyBlock {
-  background: linear-gradient(180deg, #F8FAFC 0%, #EDF5FA 100%);
+  background: linear-gradient(180deg, #F8FAFC 0%, #EDF2F9 100%);
   border-radius: $radius-xl;
   padding: 50px 40px;
-  border: 1px solid rgba(23, 74, 110, 0.08);
+  border: 1px solid rgba(9, 50, 115, 0.08);
 
   @include mobile {
     padding: 30px 18px;

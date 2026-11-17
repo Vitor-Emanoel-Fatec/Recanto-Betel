@@ -1,20 +1,13 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { BeneficiaryController } from './beneficiary.controller.js';
-import { BeneficiaryService } from './beneficiary.service.js';
 
 describe('BeneficiaryController', () => {
-  let controller: BeneficiaryController;
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [BeneficiaryController],
-      providers: [BeneficiaryService],
-    }).compile();
-
-    controller = module.get<BeneficiaryController>(BeneficiaryController);
+  it('protects sensitive beneficiary CRUD behind authenticated Admin access', () => {
+    expect(Reflect.getMetadata('__guards__', BeneficiaryController)).toHaveLength(2);
+    expect(Reflect.getMetadata('roles', BeneficiaryController)).toEqual(['ADMIN']);
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
+  it('allows authenticated users to list only their linked beneficiaries', () => {
+    expect(Reflect.getMetadata('roles', BeneficiaryController.prototype.listMine))
+      .toEqual(['USER', 'PARENT']);
   });
 });
